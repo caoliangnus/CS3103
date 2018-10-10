@@ -1,3 +1,5 @@
+package directoryServer;
+
 import java.util.Objects;
 
 public class Entry {
