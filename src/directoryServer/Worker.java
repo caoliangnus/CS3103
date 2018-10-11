@@ -62,7 +62,7 @@ public class Worker implements Runnable {
     }
 
     private synchronized void sendListOfAvailableFiles() {
-        int counter = 1;
+        /*int counter = 1;
         StringBuilder resultString = new StringBuilder();
         for (String entry : fileNameList) {
             resultString.append(counter + ". " + entry + "\n");
@@ -70,6 +70,10 @@ public class Worker implements Runnable {
         String result = resultString.toString();
         // I am not sure if PrintWriter is the best kind of stream to write large amount of data.
         toClient.write(result);
+        toClient.flush();*/
+
+        // Write this first as the implementation is not complete yet.
+        toClient.write("This is the list command.");
         toClient.flush();
     }
 
