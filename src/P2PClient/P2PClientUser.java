@@ -9,6 +9,7 @@ public class P2PClientUser extends Thread {
     public static final int SERVER_PORT = 8888;
     public static final String LIST_COMMAND = "LIST";
     public static final String QUERY_COMMAND = "FIND";
+    public static final String EXIT_COMMAND = "EXIT";
 
     private Socket clientRequestSocket;
     private PrintWriter toServer;
@@ -45,6 +46,7 @@ public class P2PClientUser extends Thread {
                         // Inform method
                         break;
                     case 5:
+                        exitFromProgram();
                         break;
                     default:
                         break;
@@ -77,6 +79,22 @@ public class P2PClientUser extends Thread {
         System.out.println();
     }
 
+    private void exitFromProgram() {
+        try {
+            String localAddress = InetAddress.getLocalHost().getHostAddress();
+            String request = EXIT_COMMAND + " " + localAddress;
+            toServer.println(request);
+            String replyFromServer = fromServer.nextLine();
+            System.out.println(replyFromServer);
+            System.exit(0);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e);
+            System.exit(1);
+        }
+
+    }
+
     private void requestForListOfFiles() {
         toServer.println(LIST_COMMAND);
         String replyFromServer = fromServer.nextLine();
@@ -84,6 +102,9 @@ public class P2PClientUser extends Thread {
     }
 
     private void queryForSpecificFile() {
+
+        // Should we do some parsing and checking here? Valid file name or something similar?
+
         System.out.println("Please enter the name of the file to check: ");
         String filename = input.nextLine().trim();
         String requestString = QUERY_COMMAND + " " + filename;
