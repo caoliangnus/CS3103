@@ -50,39 +50,47 @@ public class Worker implements Runnable {
     }
 
     private void handleRequest() {
-        try {
-            Scanner input = new Scanner(connectionSocket.getInputStream());
-            String request = input.nextLine();
-            System.out.println(request);
+        while(true) {
+            try {
+                Scanner input = new Scanner(connectionSocket.getInputStream());
+                String request;
+                while(true) {
+                    if(input.hasNextLine()) {
+                        request = input.nextLine();
+                        System.out.println(request);
+                        break;
+                    }
+                }
 
-            // The regex split by one or more white space
-            String[] splitRequest = request.split("\\s+");
-            String requestType = splitRequest[0];
+                // The regex split by one or more white space
+                String[] splitRequest = request.split("\\s+");
+                String requestType = splitRequest[0];
 
-            switch(requestType) {
-                // do switching based on request type and then delegate to correct method to handle.
-                case LIST_COMMAND:
-                    sendListOfAvailableFiles();
-                    break;
-                case QUERY_COMMAND:
-                    searchForFile(splitRequest[1]);
-                    break;
-                case INFORM_COMMAND:
-                    updateDirectory(splitRequest[1],splitRequest[2],splitRequest[3]);
-                    break;
-                case EXIT_COMMAND:
-                    initializeClientExit(splitRequest[1]);
-                    break;
-                default:
-                    // Should not come here. We should return an error code and message here.
-                    toClient.println(INVALID_COMMAND_MESSAGE);
-                    toClient.flush();
-                    break;
+                switch (requestType) {
+                    // do switching based on request type and then delegate to correct method to handle.
+                    case LIST_COMMAND:
+                        sendListOfAvailableFiles();
+                        break;
+                    case QUERY_COMMAND:
+                        searchForFile(splitRequest[1]);
+                        break;
+                    case INFORM_COMMAND:
+                        updateDirectory(splitRequest[1], splitRequest[2], splitRequest[3]);
+                        break;
+                    case EXIT_COMMAND:
+                        initializeClientExit(splitRequest[1]);
+                        break;
+                    default:
+                        // Should not come here. We should return an error code and message here.
+                        toClient.println(INVALID_COMMAND_MESSAGE);
+                        toClient.flush();
+                        break;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println(e);
+                System.exit(1);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println(e);
-            System.exit(1);
         }
     }
 
@@ -128,8 +136,10 @@ public class Worker implements Runnable {
         toClient.flush();*/
 
         // Write this first as the implementation is not complete yet.
+        System.out.println("In list method now.");
         toClient.write("This is the list command.");
         toClient.flush();
+        System.out.println("In list method now 2.");
     }
 
     private synchronized void updateDirectory (String ip, String fileName, String chunkNum){

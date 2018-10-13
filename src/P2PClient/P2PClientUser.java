@@ -157,8 +157,15 @@ public class P2PClientUser extends Thread {
 
     private void requestForListOfFiles() {
         toServer.println(LIST_COMMAND);
-        String replyFromServer = fromServer.nextLine();
-        System.out.println(replyFromServer);
+        while(true) {
+            if(fromServer.hasNextLine()) {
+                System.out.println("In requestForListOfFiles method.");
+                String replyFromServer = fromServer.nextLine();
+                System.out.println("In requestForListOfFiles method 2.");
+                System.out.println(replyFromServer);
+                break;
+            }
+        }
     }
 
     private void queryForSpecificFile() {
