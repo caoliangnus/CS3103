@@ -127,10 +127,14 @@ public class P2PClientUser extends Thread {
             System.out.println(request);
             toServer.println(request);
             toServer.flush();
-            String replyFromServer = fromServer.nextLine();
-            System.out.println(replyFromServer);
 
-
+            while(true) {
+                if(fromServer.hasNextLine()) {
+                    String replyFromServer = fromServer.nextLine();
+                    System.out.println(replyFromServer);
+                    break;
+                }
+            }
         }catch (Exception e){
             e.printStackTrace();
             System.out.println(e);
@@ -144,9 +148,14 @@ public class P2PClientUser extends Thread {
             String localAddress = InetAddress.getLocalHost().getHostAddress();
             String request = EXIT_COMMAND + " " + localAddress;
             toServer.println(request);
-            String replyFromServer = fromServer.nextLine();
-            System.out.println(replyFromServer);
-            System.exit(0);
+
+            while(true) {
+                if(fromServer.hasNextLine()) {
+                    String replyFromServer = fromServer.nextLine();
+                    System.out.println(replyFromServer);
+                    System.exit(0);
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println(e);
@@ -159,9 +168,7 @@ public class P2PClientUser extends Thread {
         toServer.println(LIST_COMMAND);
         while(true) {
             if(fromServer.hasNextLine()) {
-                System.out.println("In requestForListOfFiles method.");
                 String replyFromServer = fromServer.nextLine();
-                System.out.println("In requestForListOfFiles method 2.");
                 System.out.println(replyFromServer);
                 break;
             }
@@ -176,8 +183,14 @@ public class P2PClientUser extends Thread {
         String filename = input.nextLine().trim();
         String requestString = QUERY_COMMAND + " " + filename;
         toServer.println(requestString);
-        String replyFromServer = fromServer.nextLine();
-        System.out.println(replyFromServer);
+
+        while(true) {
+            if(fromServer.hasNextLine()) {
+                String replyFromServer = fromServer.nextLine();
+                System.out.println(replyFromServer);
+                break;
+            }
+        }
     }
 
     public void run() {

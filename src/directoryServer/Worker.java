@@ -18,14 +18,14 @@ public class Worker implements Runnable {
     private static final String INFORM_COMMAND = "INFORM";
 
     // List of success code and message to return
-    private static final String FILE_FOUND_MESSAGE = "201 There is such a file.";
+    private static final String FILE_FOUND_MESSAGE = "201 There is such a file.\n";
     private static final String EXIT_SUCCESSFUL_MESSAGE = "202 Exit is successful. " +
             "Data about user has been completely removed from directory server.";
     private static final String UPDATE_SUCCESSFUL_MESSAGE = "203 Advertisement is updated";
 
     // List of error code and message to return
     private static final String INVALID_COMMAND_MESSAGE = "404 There is no such command.";
-    private static final String FILE_NOT_PRESENT_MESSAGE = "403 There is no such file.";
+    private static final String FILE_NOT_PRESENT_MESSAGE = "403 There is no such file.\n";
     private static final String INVALID_FORMAT_IP_ADDRESS_MESSAGE = "405 IP Address given is not of valid format.";
     private static final String INVALID_FILE_TYPE_MESSAGE = "406 File type advertising is not supported, " +
             "please choose a .txt file.";
@@ -136,10 +136,9 @@ public class Worker implements Runnable {
         toClient.flush();*/
 
         // Write this first as the implementation is not complete yet.
-        System.out.println("In list method now.");
-        toClient.write("This is the list command.");
+        toClient.write("This is the list command.\n");
         toClient.flush();
-        System.out.println("In list method now 2.");
+
     }
 
     private synchronized void updateDirectory (String ip, String fileName, String chunkNum){
