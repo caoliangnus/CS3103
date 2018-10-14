@@ -94,7 +94,6 @@ public class P2PClientUser extends Thread {
             //(I am thinking in the future at the start of the application we prompt this step to the user and let user
             //specify which folder he is using to download/upload file, assuming we only allows him to use one folder)
             System.out.println("Please enter the directory of the folder where the file reside: ");
-            input.nextLine(); //consume the "\n" previously not captured by nextInt();
 
             String fileDirectory = input.nextLine().trim();
             File advertisingFolder = new File(fileDirectory);
@@ -124,7 +123,7 @@ public class P2PClientUser extends Thread {
             }
 
             String request = INFORM_COMMAND + " " + localAddress + " " + fileName + " " + numOfChunks;
-            System.out.println(request);
+            // System.out.println(request);
             toServer.println(request);
             toServer.flush();
 

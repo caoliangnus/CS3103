@@ -181,12 +181,16 @@ public class Worker implements Runnable {
             }
             entryList.put(fileName, entries);
         }else {
-            for(int j = 0; j < Integer.parseInt(chunkNum); j ++){
-                entryList.get(fileName).add(new Entry(j+1,ip));
+            //Check if this file was advertised by this host earlier, if yes then don't add duplicate entries
+            if(entryList.get(fileName).get(0).getAddress().equals(ip)){
+                System.out.println(fileName + " has been advertised earlier. ");
+            }else {
+                for (int j = 0; j < Integer.parseInt(chunkNum); j++) {
+                    entryList.get(fileName).add(new Entry(j + 1, ip));
+
+                }
             }
-
         }
-
         toClient.println(UPDATE_SUCCESSFUL_MESSAGE);
         toClient.flush();
 
