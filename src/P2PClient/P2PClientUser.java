@@ -127,10 +127,14 @@ public class P2PClientUser extends Thread {
             System.out.println(request);
             toServer.println(request);
             toServer.flush();
-            String replyFromServer = fromServer.nextLine();
-            System.out.println(replyFromServer);
 
-
+            while(true) {
+                if(fromServer.hasNextLine()) {
+                    String replyFromServer = fromServer.nextLine();
+                    System.out.println(replyFromServer);
+                    break;
+                }
+            }
         }catch (Exception e){
             e.printStackTrace();
             System.out.println(e);
@@ -144,9 +148,14 @@ public class P2PClientUser extends Thread {
             String localAddress = InetAddress.getLocalHost().getHostAddress();
             String request = EXIT_COMMAND + " " + localAddress;
             toServer.println(request);
-            String replyFromServer = fromServer.nextLine();
-            System.out.println(replyFromServer);
-            System.exit(0);
+
+            while(true) {
+                if(fromServer.hasNextLine()) {
+                    String replyFromServer = fromServer.nextLine();
+                    System.out.println(replyFromServer);
+                    System.exit(0);
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println(e);
@@ -157,8 +166,13 @@ public class P2PClientUser extends Thread {
 
     private void requestForListOfFiles() {
         toServer.println(LIST_COMMAND);
-        String replyFromServer = fromServer.nextLine();
-        System.out.println(replyFromServer);
+        while(true) {
+            if(fromServer.hasNextLine()) {
+                String replyFromServer = fromServer.nextLine();
+                System.out.println(replyFromServer);
+                break;
+            }
+        }
     }
 
     private void queryForSpecificFile() {
@@ -169,8 +183,14 @@ public class P2PClientUser extends Thread {
         String filename = input.nextLine().trim();
         String requestString = QUERY_COMMAND + " " + filename;
         toServer.println(requestString);
-        String replyFromServer = fromServer.nextLine();
-        System.out.println(replyFromServer);
+
+        while(true) {
+            if(fromServer.hasNextLine()) {
+                String replyFromServer = fromServer.nextLine();
+                System.out.println(replyFromServer);
+                break;
+            }
+        }
     }
 
     public void run() {
