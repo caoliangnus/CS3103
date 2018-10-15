@@ -6,7 +6,7 @@
 - Sky Ang
 - Jason Leo
 
-## Assumption made for our protocol designs (Subject to changes)
+### Assumption made for our protocol designs (Subject to changes)
 - Assuming user will only download/upload text files
 - Assuming the chunk size per file is at least 10
 - Set chunk size to be 1,200 bytes
