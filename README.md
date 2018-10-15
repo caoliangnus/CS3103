@@ -1,10 +1,10 @@
 # CS3103
 
 ## Team Member
-Cao Liang
-Justin
-Sky
-Jason
+- Cao Liang
+- Justin Poh
+- Sky Ang
+- Jason Leo
 
 ## Assumption made for our protocol designs (Subject to changes)
 - Assuming user will only download/upload text files
