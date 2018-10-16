@@ -16,6 +16,7 @@ public class Worker implements Runnable {
     private static final String QUERY_COMMAND = "FIND";
     private static final String EXIT_COMMAND = "EXIT";
     private static final String INFORM_COMMAND = "INFORM";
+    private static final String DOWNLOAD_COMMAND = "DOWNLOAD";
 
     // List of success code and message to return
     private static final String FILE_FOUND_MESSAGE = "201 There is such a file.\n";
@@ -31,6 +32,9 @@ public class Worker implements Runnable {
             "please choose a .txt file.";
     private static final String INVALID_CHUNK_NUMBER_MESSAGE = "408 Chunk number given is invalid, " +
             "please provide a positive chunk number that is more than 0.";
+    private static final String CHUNK_NOT_PRESENT_MESSAGE = "409 There is no such chunk.\n";
+
+    private static final int MAX_IP_ADDRESS_RETURNED = 10;
 
 
     private Socket connectionSocket;
@@ -77,6 +81,9 @@ public class Worker implements Runnable {
                     case INFORM_COMMAND:
                         updateDirectory(splitRequest[1], splitRequest[2], splitRequest[3]);
                         break;
+                    case DOWNLOAD_COMMAND:
+                        returnIPAddressesForFile(splitRequest[1], splitRequest[2]);
+                        break;
                     case EXIT_COMMAND:
                         initializeClientExit(splitRequest[1]);
                         break;
@@ -92,6 +99,59 @@ public class Worker implements Runnable {
                 System.exit(1);
             }
         }
+    }
+
+    private synchronized void returnIPAddressesForFile(String filename, String chunkNum) {
+        boolean doesChunkExist = false;
+
+        // Check if chunkNum is a valid positive number than one or more
+        if(Integer.parseInt(chunkNum)<1){
+            toClient.write(INVALID_CHUNK_NUMBER_MESSAGE);
+            toClient.flush();
+            return;
+        }
+
+        List<Entry> listOfEntries = entryList.get(filename);
+        if (listOfEntries == null) {
+            toClient.write(FILE_NOT_PRESENT_MESSAGE);
+            toClient.flush();
+            return;
+        }
+
+        // This will be the list to store the results
+        StringBuilder IPAddresses = new StringBuilder();
+        int chunkNumber = Integer.parseInt(chunkNum);
+        int counter = 0;
+        for(Entry entry : listOfEntries) {
+
+            // For now, we just take the first 10 IP addresses.
+            // However, we might want to change the number of addresses, and also change the way
+            // we choose the addresses.
+            if (entry.getChunkNumber() == chunkNumber) {
+                IPAddresses.append(entry.getAddress());
+                // Separate the IP address using commas for easy splitting at Client side.
+                IPAddresses.append(',');
+                counter++;
+                doesChunkExist = true;
+                if (counter == MAX_IP_ADDRESS_RETURNED) {
+                    break;
+                }
+            }
+        }
+
+        // If there is the filename, but no such chunks, then it means this
+        // chunk does not exist.
+        if (!doesChunkExist) {
+            toClient.write(CHUNK_NOT_PRESENT_MESSAGE);
+            toClient.flush();
+            return;
+        }
+
+        String reply = IPAddresses.toString().substring(0, IPAddresses.length()-1);
+        reply = reply + "\n";
+
+        toClient.write(reply);
+        toClient.flush();
     }
 
     private synchronized void initializeClientExit(String IPAddress) {
@@ -125,19 +185,20 @@ public class Worker implements Runnable {
     }
 
     private synchronized void sendListOfAvailableFiles() {
-        /*int counter = 1;
+        int counter = 1;
         StringBuilder resultString = new StringBuilder();
         for (String entry : fileNameList) {
             resultString.append(counter + ". " + entry + "\n");
+            counter++;
         }
         String result = resultString.toString();
         // I am not sure if PrintWriter is the best kind of stream to write large amount of data.
         toClient.write(result);
-        toClient.flush();*/
+        toClient.flush();
 
         // Write this first as the implementation is not complete yet.
-        toClient.write("This is the list command.\n");
-        toClient.flush();
+        //toClient.write("This is the list command.\n");
+        //toClient.flush();
 
     }
 
