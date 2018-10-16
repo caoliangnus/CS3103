@@ -1,6 +1,11 @@
 package P2PClient;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -9,10 +14,15 @@ import java.util.Scanner;
 public class P2PClientUser extends Thread {
 
     public static final int SERVER_PORT = 8888;
+    public static final int CLIENT_SERVER_PORT = 9999;
     public static final String LIST_COMMAND = "LIST";
     public static final String QUERY_COMMAND = "FIND";
     public static final String EXIT_COMMAND = "EXIT";
     public static final String INFORM_COMMAND = "INFORM";
+    public static final String DOWNLOAD_COMMAND = "DOWNLOAD";
+    public static final String GET_COMMAND = "GET";
+
+    private static final String CHUNK_NOT_PRESENT_MESSAGE = "409 There is no such chunk.\n";
 
     public static final int CHUNK_SIZE = 1200; //following MTU byte size of 1500, to play safe make it slightly lesser
 
@@ -29,8 +39,8 @@ public class P2PClientUser extends Thread {
             toServer = new PrintWriter(clientRequestSocket.getOutputStream(), true);
             fromServer = new Scanner(clientRequestSocket.getInputStream());
 
-             while(true) {
-                 int option;
+            while(true) {
+                int option;
                 displayMenu();
 
                 System.out.println("Please enter your option (1-5): ");
@@ -46,6 +56,7 @@ public class P2PClientUser extends Thread {
                         break;
                     case 3:
                         // Download method
+                        downloadFile();
                         break;
                     case 4:
                         // Inform method
@@ -59,7 +70,7 @@ public class P2PClientUser extends Thread {
                 }
 
 
-             }
+            }
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println(e);
@@ -81,6 +92,83 @@ public class P2PClientUser extends Thread {
         System.out.println("***************************************");
         System.out.println("***************************************");
         System.out.println();
+    }
+
+    private void downloadFile() {
+        System.out.println("Please enter the name of the file to download: ");
+        String filename = input.nextLine();
+
+        BufferedOutputStream bos = null;
+        try {
+            // We put true to append because we want to add on to the end of the file, chunk by chunk.
+            bos = new BufferedOutputStream(new FileOutputStream(filename, true));
+        } catch (FileNotFoundException e) {
+            // It means that either the path given is to a directory, or if the file
+            // does not exist, it cannot be created.
+            e.printStackTrace();
+        }
+
+        // Do we want to multithread here? For now, I will be doing NO multithreading.
+        int chunkNumber = 1;
+        while(true) {
+            String request = DOWNLOAD_COMMAND + " " + filename + " " + chunkNumber + "\n";
+            toServer.write(request);
+            toServer.flush();
+
+            String reply = fromServer.nextLine();
+
+            boolean hasReadChunk = false;
+
+            // Check reply. If reply says there is no more chunks, then download of
+            // file has completed.
+            if (reply.equals(CHUNK_NOT_PRESENT_MESSAGE)) {
+                System.out.println("Download of " + filename + " is completed.");
+                return;
+            }
+            String[] listOfAddresses = reply.split(",");
+
+
+            // Now, loop through the list of addresses and try to establish a connection and download chunk
+            for (int i = 0; i < listOfAddresses.length; i++) {
+                try {
+                    Socket downloadSocket = new Socket(listOfAddresses[i], CLIENT_SERVER_PORT);
+
+                    // Send request to peer-transient-server via PrintWriter
+                    PrintWriter downloadSocketOutput = new PrintWriter(downloadSocket.getOutputStream(), true);
+                    // Read in chunks in bytes via InputStream
+                    BufferedInputStream fromTransientServer = new BufferedInputStream(downloadSocket.getInputStream());
+                    // Buffer to store byte data from transient server to write into file
+                    byte[] buffer = new byte[CHUNK_SIZE];
+
+                    String clientRequest = GET_COMMAND + " " + filename + " " + chunkNumber;
+                    downloadSocketOutput.write(clientRequest);
+                    downloadSocketOutput.flush();
+
+                    int bytesRead = fromTransientServer.read(buffer, 0, CHUNK_SIZE);
+                    if(bytesRead > 0) {
+                        hasReadChunk = true;
+
+                        // Append to file.
+                        bos.write(buffer, 0, CHUNK_SIZE);
+                        bos.flush();
+                        System.out.println("Chunk " + chunkNumber + " has been downloaded.");
+                        break;
+                    } else {
+                        // Cannot read data from the peer despite being able to connect. Continue to the next IP.
+                        continue;
+                    }
+
+                } catch (Exception e) {
+                    // for now, we just continue to the next IP to download the chunk
+                    continue;
+                }
+            }
+            if (hasReadChunk) {
+                // current chunk has been read and written to file. Move on to the next chunk
+                chunkNumber++;
+            }
+
+        }
     }
 
     private void informAndUpdate() {
