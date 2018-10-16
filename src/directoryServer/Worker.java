@@ -33,6 +33,8 @@ public class Worker implements Runnable {
     private static final String INVALID_CHUNK_NUMBER_MESSAGE = "408 Chunk number given is invalid, " +
             "please provide a positive chunk number that is more than 0.";
     private static final String CHUNK_NOT_PRESENT_MESSAGE = "409 There is no such chunk.\n";
+    private static final String FILE_LIST_EMPTY_MESSAGE = "410 List is empty.\n";
+
 
     private static final int MAX_IP_ADDRESS_RETURNED = 10;
 
@@ -185,21 +187,21 @@ public class Worker implements Runnable {
     }
 
     private synchronized void sendListOfAvailableFiles() {
-        int counter = 1;
-        StringBuilder resultString = new StringBuilder();
-        for (String entry : fileNameList) {
-            resultString.append(counter + ". " + entry + "\n");
-            counter++;
+
+        if (fileNameList.isEmpty()) {
+            toClient.write(FILE_LIST_EMPTY_MESSAGE);
+            toClient.flush();
+        } else {
+
+            int counter = 1;
+            StringBuilder resultString = new StringBuilder();
+            for (String entry : fileNameList) {
+                resultString.append(counter + ". " + entry + "\n");
+            }
+            String result = resultString.toString();
+            toClient.write(result);
+            toClient.flush();
         }
-        String result = resultString.toString();
-        // I am not sure if PrintWriter is the best kind of stream to write large amount of data.
-        toClient.write(result);
-        toClient.flush();
-
-        // Write this first as the implementation is not complete yet.
-        //toClient.write("This is the list command.\n");
-        //toClient.flush();
-
     }
 
     private synchronized void updateDirectory (String ip, String fileName, String chunkNum){
