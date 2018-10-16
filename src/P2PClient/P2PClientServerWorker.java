@@ -46,7 +46,7 @@ public class P2PClientServerWorker implements Runnable {
         }
 
         String[] splitRequest = request.split("\\s+");
-        if (!splitRequest[0].equals(GET_COMMAND)) {
+        if (!splitRequest[0].equals(GET_COMMAND) || splitRequest.length != 3) {
             toPeerSimplified.write(INVALID_COMMAND);
             toPeerSimplified.flush();
             return;
@@ -81,7 +81,7 @@ public class P2PClientServerWorker implements Runnable {
         try {
             int numberOfBytesRead = bis.read(buffer, (requestChunk - 1) * CHUNK_SIZE, CHUNK_SIZE);
             if (numberOfBytesRead < 1) {
-
+                // Need to do something and inform peer.
             }else {
                 toPeer.write(buffer, 0, CHUNK_SIZE);
                 toPeer.flush();

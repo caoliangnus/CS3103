@@ -97,6 +97,7 @@ public class P2PClientUser extends Thread {
     private void downloadFile() {
         System.out.println("Please enter the name of the file to download: ");
         String filename = input.nextLine();
+        String reply;
 
         BufferedOutputStream bos = null;
         try {
@@ -115,7 +116,12 @@ public class P2PClientUser extends Thread {
             toServer.write(request);
             toServer.flush();
 
-            String reply = fromServer.nextLine();
+            while (true) {
+                if (fromServer.hasNextLine()) {
+                    reply = fromServer.nextLine();
+                    break;
+                }
+            }
 
             boolean hasReadChunk = false;
 
@@ -152,9 +158,11 @@ public class P2PClientUser extends Thread {
                         bos.write(buffer, 0, CHUNK_SIZE);
                         bos.flush();
                         System.out.println("Chunk " + chunkNumber + " has been downloaded.");
+                        downloadSocket.close();
                         break;
                     } else {
                         // Cannot read data from the peer despite being able to connect. Continue to the next IP.
+                        downloadSocket.close();
                         continue;
                     }
 
