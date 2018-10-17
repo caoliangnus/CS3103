@@ -20,9 +20,14 @@ public class P2PClientUser extends Thread {
     public static final String EXIT_COMMAND = "EXIT";
     public static final String INFORM_COMMAND = "INFORM";
     public static final String DOWNLOAD_COMMAND = "DOWNLOAD";
+    public static final String CHANGE_DIRECTORY_COMMAND = "CHANGE";
     public static final String GET_COMMAND = "GET";
 
     private static final String CHUNK_NOT_PRESENT_MESSAGE = "409 There is no such chunk.\n";
+    private static final String INVALID_USER_INPUT = "Invalid User Input. Please enter one number only.\n";
+    private static final String INVALID_USER_INPUT_NUMBER = "Please enter number only.\n";
+
+
 
     public static final int CHUNK_SIZE = 1200; //following MTU byte size of 1500, to play safe make it slightly lesser
 
@@ -30,6 +35,7 @@ public class P2PClientUser extends Thread {
     private PrintWriter toServer;
     private Scanner fromServer;
     private static Scanner input = new Scanner(System.in);
+    private String folderDirectory = "";
 
     private void handleUser() {
         try {
@@ -39,14 +45,37 @@ public class P2PClientUser extends Thread {
             toServer = new PrintWriter(clientRequestSocket.getOutputStream(), true);
             fromServer = new Scanner(clientRequestSocket.getInputStream());
 
+            changeFileDirectory();
+
             while(true) {
                 int option;
                 displayMenu();
 
-                System.out.println("Please enter your option (1-5): ");
+                System.out.println("Please enter your option (1-6): ");
                 // Might want to catch error and warn user to input correctly before looping back.
-                option = input.nextInt();
-                input.nextLine();
+
+                String userInput = "";
+                while (true) {
+                    if (input.hasNextLine()) {
+                        userInput = input.nextLine();
+                        break;
+                    }
+                }
+
+                String[] splitUserInput = userInput.split("\\s+");
+
+                if (splitUserInput.length > 1) {
+                    System.out.println(INVALID_USER_INPUT);
+                    continue;
+                }
+
+                try {
+                    option = Integer.parseInt(splitUserInput[0]);
+                } catch (NumberFormatException e) {
+                    System.out.println(INVALID_USER_INPUT_NUMBER);
+                    continue;
+                }
+
                 switch(option) {
                     case 1:
                         requestForListOfFiles();
@@ -63,6 +92,9 @@ public class P2PClientUser extends Thread {
                         informAndUpdate();
                         break;
                     case 5:
+                        changeFileDirectory();
+                        break;
+                    case 6:
                         exitFromProgram();
                         break;
                     default:
@@ -79,6 +111,11 @@ public class P2PClientUser extends Thread {
 
     }
 
+    private void changeFileDirectory() {
+        System.out.println("Please specify the folder path for sharing folder: ");
+        folderDirectory = input.nextLine().trim();
+    }
+
     private void displayMenu() {
 
         System.out.println("***************************************");
@@ -88,7 +125,8 @@ public class P2PClientUser extends Thread {
         System.out.println("2. Check if file exists");
         System.out.println("3. Download file");
         System.out.println("4. Update directory server");
-        System.out.println("5. Quit");
+        System.out.println("5. Change folder directory");
+        System.out.println("6. Quit");
         System.out.println("***************************************");
         System.out.println("***************************************");
         System.out.println();
@@ -186,13 +224,7 @@ public class P2PClientUser extends Thread {
             //get the local IP address
             String localAddress = InetAddress.getLocalHost().getHostAddress();
 
-            //Get the directory of the folder
-            //(I am thinking in the future at the start of the application we prompt this step to the user and let user
-            //specify which folder he is using to download/upload file, assuming we only allows him to use one folder)
-            System.out.println("Please enter the directory of the folder where the file reside: ");
-
-            String fileDirectory = input.nextLine().trim();
-            File advertisingFolder = new File(fileDirectory);
+            File advertisingFolder = new File(folderDirectory);
             //check whether if the directory indicated is indeed a directory and exits
             if (!advertisingFolder.exists() || !advertisingFolder.isDirectory()) {
                 System.out.println("Folder not found, please re-enter valid folder directory: ");
@@ -202,7 +234,7 @@ public class P2PClientUser extends Thread {
             //Obtaining file name
             System.out.println("Please provide the file name you wish to advertise ");
             String fileName = input.next().trim();
-            File advertisingFile = new File(advertisingFolder + "\\" + fileName);
+            File advertisingFile = new File(advertisingFolder + File.separator + fileName);
             //check whether if the indicated file exists and whether if it is a file
             if (!advertisingFile.exists() || !advertisingFile.isFile()) {
                 System.out.println("File not found, please re-enter valid file name of existing file in this folder: ");

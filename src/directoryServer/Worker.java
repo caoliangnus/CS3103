@@ -21,7 +21,7 @@ public class Worker implements Runnable {
     // List of success code and message to return
     private static final String FILE_FOUND_MESSAGE = "201 There is such a file.\n";
     private static final String EXIT_SUCCESSFUL_MESSAGE = "202 Exit is successful. " +
-            "Data about user has been completely removed from directory server.";
+            "Data about user has been completely removed from directory server.\n";
     private static final String UPDATE_SUCCESSFUL_MESSAGE = "203 Advertisement is updated";
 
     // List of error code and message to return
@@ -172,6 +172,7 @@ public class Worker implements Runnable {
                 }
             }
         });
+
         toClient.write(EXIT_SUCCESSFUL_MESSAGE);
         toClient.flush();
     }
