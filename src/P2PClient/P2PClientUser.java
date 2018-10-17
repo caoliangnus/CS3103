@@ -5,7 +5,6 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -20,7 +19,6 @@ public class P2PClientUser extends Thread {
     public static final String EXIT_COMMAND = "EXIT";
     public static final String INFORM_COMMAND = "INFORM";
     public static final String DOWNLOAD_COMMAND = "DOWNLOAD";
-    public static final String CHANGE_DIRECTORY_COMMAND = "CHANGE";
     public static final String GET_COMMAND = "GET";
 
     private static final String CHUNK_NOT_PRESENT_MESSAGE = "409 There is no such chunk.\n";
@@ -29,7 +27,7 @@ public class P2PClientUser extends Thread {
 
 
 
-    public static final int CHUNK_SIZE = 1200; //following MTU byte size of 1500, to play safe make it slightly lesser
+    public static final int CHUNK_SIZE = 1024; //following MTU byte size of 1500, to play safe make it slightly lesser
 
     private Socket clientRequestSocket;
     private PrintWriter toServer;
