@@ -1,11 +1,6 @@
 package P2PClient;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Scanner;
@@ -183,6 +178,12 @@ public class P2PClientUser extends Thread {
             // file has completed.
             if (reply.equals(CHUNK_NOT_PRESENT_MESSAGE)) {
                 System.out.println("Download of " + filename + " is completed.");
+                try {
+                    bos.close();
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 return;
             }
             String[] listOfAddresses = reply.split(",");
@@ -263,15 +264,7 @@ public class P2PClientUser extends Thread {
 
             //calculate number of chunk
             int fileSize = (int) advertisingFile.length();
-            int numOfChunks;
-
-            if(fileSize <= CHUNK_SIZE){
-                numOfChunks = 1;
-            }else if ((fileSize % CHUNK_SIZE) > 0) {
-                numOfChunks = (fileSize / CHUNK_SIZE) + 1;
-            } else {
-                numOfChunks = (fileSize / CHUNK_SIZE);
-            }
+            int numOfChunks = calculateChunkSize(fileSize);
 
             String request = INFORM_COMMAND + " " + localAddress + " " + fileName + " " + numOfChunks;
             // System.out.println(request);
@@ -290,6 +283,21 @@ public class P2PClientUser extends Thread {
             System.out.println(e);
             System.exit(1);
         }
+
+    }
+
+    private int calculateChunkSize(int fileSize){
+        int numOfChunks;
+
+        if(fileSize <= CHUNK_SIZE){
+            numOfChunks = 1;
+        }else if ((fileSize % CHUNK_SIZE) > 0) {
+            numOfChunks = (fileSize / CHUNK_SIZE) + 1;
+        } else {
+            numOfChunks = (fileSize / CHUNK_SIZE);
+        }
+
+        return numOfChunks;
 
     }
 

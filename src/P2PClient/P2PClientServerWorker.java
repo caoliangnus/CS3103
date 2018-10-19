@@ -1,10 +1,6 @@
 package P2PClient;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
 
@@ -105,6 +101,14 @@ public class P2PClientServerWorker implements Runnable {
             e.printStackTrace();
             System.out.println(e);
             System.exit(1);
+        } finally {
+            if(bis!=null){
+                try {
+                    bis.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
     }

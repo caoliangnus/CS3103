@@ -6,8 +6,6 @@ import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import sun.dc.pr.PRError;
-
 public class P2PClientServer extends Thread {
 
     public static final int CLIENT_SERVER_PORT = 9999;
