@@ -238,7 +238,6 @@ public class Worker implements Runnable {
             fileNameList.add(fileName);
             fileExisted = false;
         }
-
         //Update entry table (Subject to discussion, for now i just assume the client will advertise when he get the
         //whole file)
         if(!fileExisted){
@@ -258,7 +257,7 @@ public class Worker implements Runnable {
                 }
             }
         }
-        toClient.println(UPDATE_SUCCESSFUL_MESSAGE);
+        toClient.write(UPDATE_SUCCESSFUL_MESSAGE);
         toClient.flush();
 
     }

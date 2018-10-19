@@ -26,16 +26,18 @@ public class P2PClientServer extends Thread {
             System.out.println(e);
             System.exit(1);
         }
-
+        int counter = 1;
         while(true) {
             try {
                 connectionSocket = listeningSocket.accept();
+                System.out.println(counter++);
             } catch (IOException e) {
                 e.printStackTrace();
                 System.out.println(e);
                 System.exit(1);
             }
 
+            System.out.println("Connected: " + connectionSocket.getRemoteSocketAddress());
             P2PClientServerWorker requestToHandle = new P2PClientServerWorker(connectionSocket);
             threadPool.execute(requestToHandle);
         }
