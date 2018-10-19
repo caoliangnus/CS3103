@@ -21,7 +21,7 @@ public class P2PClientUser extends Thread {
     public static final String DOWNLOAD_COMMAND = "DOWNLOAD";
     public static final String GET_COMMAND = "GET";
 
-    private static final String CHUNK_NOT_PRESENT_MESSAGE = "409 There is no such chunk.\n";
+    private static final String CHUNK_NOT_PRESENT_MESSAGE = "409 There is no such chunk.";
     private static final String INVALID_USER_INPUT = "Invalid User Input. Please enter one number only.\n";
     private static final String INVALID_USER_INPUT_NUMBER = "Please enter number only.\n";
 
@@ -202,20 +202,18 @@ public class P2PClientUser extends Thread {
                     // Buffer to store byte data from transient server to write into file
                     byte[] buffer = new byte[CHUNK_SIZE];
 
-                    String clientRequest = GET_COMMAND + " " + filename + " " + chunkNumber;
+                    String clientRequest = GET_COMMAND + " " + filename + " " + chunkNumber + "\n";
                     downloadSocketOutput.write(clientRequest);
                     downloadSocketOutput.flush();
 
                     int bytesRead = fromTransientServer.read(buffer, 0, CHUNK_SIZE);
-
-                    System.out.println(bytesRead);
 
                     if(bytesRead > 0) {
                         hasReadChunk = true;
 
 
                         // Append to file.
-                        bos.write(buffer, 0, CHUNK_SIZE);
+                        bos.write(buffer, 0, bytesRead);
                         bos.flush();
                         System.out.println("Chunk " + chunkNumber + " has been downloaded.");
                         downloadSocket.close();
@@ -266,10 +264,13 @@ public class P2PClientUser extends Thread {
             //calculate number of chunk
             int fileSize = (int) advertisingFile.length();
             int numOfChunks;
-            if (fileSize % CHUNK_SIZE > 0) {
-                numOfChunks = fileSize / CHUNK_SIZE + 1;
+
+            if(fileSize <= CHUNK_SIZE){
+                numOfChunks = 1;
+            }else if ((fileSize % CHUNK_SIZE) > 0) {
+                numOfChunks = (fileSize / CHUNK_SIZE) + 1;
             } else {
-                numOfChunks = fileSize / CHUNK_SIZE;
+                numOfChunks = (fileSize / CHUNK_SIZE);
             }
 
             String request = INFORM_COMMAND + " " + localAddress + " " + fileName + " " + numOfChunks;
