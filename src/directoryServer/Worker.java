@@ -22,18 +22,18 @@ public class Worker implements Runnable {
     private static final String FILE_FOUND_MESSAGE = "201 There is such a file.\n";
     private static final String EXIT_SUCCESSFUL_MESSAGE = "202 Exit is successful. " +
             "Data about user has been completely removed from directory server.\n";
-    private static final String UPDATE_SUCCESSFUL_MESSAGE = "203 Advertisement is updated";
+    private static final String UPDATE_SUCCESSFUL_MESSAGE = "203 Advertisement is updated\n";
 
     // List of error code and message to return
-    private static final String INVALID_COMMAND_MESSAGE = "404 There is no such command.";
+    private static final String INVALID_COMMAND_MESSAGE = "404 There is no such command.\n";
     private static final String FILE_NOT_PRESENT_MESSAGE = "403 There is no such file.\n";
-    private static final String INVALID_FORMAT_IP_ADDRESS_MESSAGE = "405 IP Address given is not of valid format.";
+    private static final String INVALID_FORMAT_IP_ADDRESS_MESSAGE = "405 IP Address given is not of valid format.\n";
     private static final String INVALID_FILE_TYPE_MESSAGE = "406 File type advertising is not supported, " +
-            "please choose a .txt file.";
+            "please choose a .txt file.\n";
     private static final String INVALID_CHUNK_NUMBER_MESSAGE = "408 Chunk number given is invalid, " +
-            "please provide a positive chunk number that is more than 0.";
+            "please provide a positive chunk number that is more than 0.\n";
     private static final String CHUNK_NOT_PRESENT_MESSAGE = "409 There is no such chunk.\n";
-    private static final String FILE_LIST_EMPTY_MESSAGE = "410 List is empty.\n";
+    private static final String FILE_LIST_EMPTY_MESSAGE = "410 List is empty.\nEOF\n";
 
 
     private static final int MAX_IP_ADDRESS_RETURNED = 10;
@@ -60,6 +60,7 @@ public class Worker implements Runnable {
             try {
                 Scanner input = new Scanner(connectionSocket.getInputStream());
                 String request;
+                System.out.println("WAITING FOR REQUEST: ");
                 while(true) {
                     if(input.hasNextLine()) {
                         request = input.nextLine();
@@ -190,6 +191,7 @@ public class Worker implements Runnable {
     private synchronized void sendListOfAvailableFiles() {
 
         if (fileNameList.isEmpty()) {
+            System.out.println("EMPTY");
             toClient.write(FILE_LIST_EMPTY_MESSAGE);
             toClient.flush();
         } else {
@@ -197,8 +199,9 @@ public class Worker implements Runnable {
             int counter = 1;
             StringBuilder resultString = new StringBuilder();
             for (String entry : fileNameList) {
-                resultString.append(counter + ". " + entry + "\n");
+                resultString.append(counter++ + ". " + entry + "\n");
             }
+            resultString.append("EOF\n");
             String result = resultString.toString();
             toClient.write(result);
             toClient.flush();

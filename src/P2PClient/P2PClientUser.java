@@ -37,8 +37,9 @@ public class P2PClientUser extends Thread {
 
     private void handleUser() {
         try {
-            clientRequestSocket = new Socket(InetAddress.getLocalHost(), SERVER_PORT);
+//            clientRequestSocket = new Socket(InetAddress.getLocalHost(), SERVER_PORT);
 
+            clientRequestSocket = new Socket("172.25.107.221", SERVER_PORT);
             // Use toServer to send the request.
             toServer = new PrintWriter(clientRequestSocket.getOutputStream(), true);
             fromServer = new Scanner(clientRequestSocket.getInputStream());
@@ -110,8 +111,25 @@ public class P2PClientUser extends Thread {
     }
 
     private void changeFileDirectory() {
-        System.out.println("Please specify the folder path for sharing folder: ");
-        folderDirectory = input.nextLine().trim();
+
+        boolean firstTime = true;
+        while(true) {
+            if (firstTime) {
+                System.out.println("Please specify the folder path for sharing folder: ");
+            } else {
+                System.out.println("Folder not found, please re-enter valid folder directory: ");
+            }
+
+            folderDirectory = input.nextLine().trim();
+
+            File advertisingFolder = new File(folderDirectory);
+            //check whether if the directory indicated is indeed a directory and exits
+            if (!advertisingFolder.exists() || !advertisingFolder.isDirectory()) {
+                firstTime = false;
+            } else {
+                return;
+            }
+        }
     }
 
     private void displayMenu() {
@@ -171,8 +189,10 @@ public class P2PClientUser extends Thread {
 
 
             // Now, loop through the list of addresses and try to establish a connection and download chunk
+
             for (int i = 0; i < listOfAddresses.length; i++) {
                 try {
+                    System.out.println("CONNECTING: " + listOfAddresses[i]);
                     Socket downloadSocket = new Socket(listOfAddresses[i], CLIENT_SERVER_PORT);
 
                     // Send request to peer-transient-server via PrintWriter
@@ -187,8 +207,12 @@ public class P2PClientUser extends Thread {
                     downloadSocketOutput.flush();
 
                     int bytesRead = fromTransientServer.read(buffer, 0, CHUNK_SIZE);
+
+                    System.out.println(bytesRead);
+
                     if(bytesRead > 0) {
                         hasReadChunk = true;
+
 
                         // Append to file.
                         bos.write(buffer, 0, CHUNK_SIZE);
@@ -231,7 +255,7 @@ public class P2PClientUser extends Thread {
 
             //Obtaining file name
             System.out.println("Please provide the file name you wish to advertise ");
-            String fileName = input.next().trim();
+            String fileName = input.nextLine().trim();
             File advertisingFile = new File(advertisingFolder + File.separator + fileName);
             //check whether if the indicated file exists and whether if it is a file
             if (!advertisingFile.exists() || !advertisingFile.isFile()) {
@@ -240,7 +264,7 @@ public class P2PClientUser extends Thread {
             }
 
             //calculate number of chunk
-            int fileSize = (int) advertisingFolder.length();
+            int fileSize = (int) advertisingFile.length();
             int numOfChunks;
             if (fileSize % CHUNK_SIZE > 0) {
                 numOfChunks = fileSize / CHUNK_SIZE + 1;
@@ -291,11 +315,14 @@ public class P2PClientUser extends Thread {
 
     private void requestForListOfFiles() {
         toServer.println(LIST_COMMAND);
-        while(true) {
-            if(fromServer.hasNextLine()) {
+        while (true) {
+            if (fromServer.hasNextLine()) {
                 String replyFromServer = fromServer.nextLine();
-                System.out.println(replyFromServer);
-                break;
+                if (replyFromServer.equals("EOF")) {
+                    return;
+                } else {
+                    System.out.println(replyFromServer);
+                }
             }
         }
     }

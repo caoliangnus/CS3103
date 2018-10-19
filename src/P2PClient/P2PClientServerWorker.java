@@ -62,7 +62,7 @@ public class P2PClientServerWorker implements Runnable {
         int requestChunk = Integer.parseInt(splitRequest[2]);
         byte[] buffer = new byte[CHUNK_SIZE];
         File requestedFile = new File(filename);
-        int noOfChunksOfFile = (int) (requestedFile.length() / CHUNK_SIZE);
+        int noOfChunksOfFile = (int) (requestedFile.length() / CHUNK_SIZE) + 1;
         BufferedInputStream bis = null;
         try {
             bis = new BufferedInputStream(new FileInputStream(filename));
