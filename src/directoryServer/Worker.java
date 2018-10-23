@@ -17,6 +17,7 @@ public class Worker implements Runnable {
     private static final String EXIT_COMMAND = "EXIT";
     private static final String INFORM_COMMAND = "INFORM";
     private static final String DOWNLOAD_COMMAND = "DOWNLOAD";
+    private static final String CHUNK_COMMAND = "CHUNK";
 
     // List of success code and message to return
     private static final String FILE_FOUND_MESSAGE = "201 There is such a file.\n";
@@ -41,7 +42,7 @@ public class Worker implements Runnable {
 
     private Socket connectionSocket;
     private PrintWriter toClient;
-    private List<String> fileNameList = DirectoryServerMain.fileNameList;
+    private List<FilePair> fileNameList = DirectoryServerMain.fileNameList;
     private Hashtable<String, ArrayList<Entry>> entryList = DirectoryServerMain.entryList;
 
     public Worker(Socket connectionSocket) {
@@ -89,6 +90,9 @@ public class Worker implements Runnable {
                         break;
                     case EXIT_COMMAND:
                         initializeClientExit(splitRequest[1]);
+                        break;
+                    case CHUNK_COMMAND:
+                        returnTotalChunkNumber(splitRequest[1]);
                         break;
                     default:
                         // Should not come here. We should return an error code and message here.
@@ -167,8 +171,9 @@ public class Worker implements Runnable {
 
                     // I am not sure if we should do it this way
                     // We can have a flag to prevent all the extra looping
-                    if (fileNameList.contains(filename)){
-                        fileNameList.remove(filename);
+                    FilePair temp = new FilePair(filename, 0);
+                    if (fileNameList.contains(temp)){
+                        fileNameList.remove(temp);
                     }
                 }
             }
@@ -179,7 +184,8 @@ public class Worker implements Runnable {
     }
 
     private synchronized void searchForFile(String filename) {
-        if (fileNameList.contains(filename)) {
+        FilePair temp = new FilePair(filename, 0);
+        if (fileNameList.contains(temp)) {
             toClient.write(FILE_FOUND_MESSAGE);
             toClient.flush();
         }else{
@@ -198,7 +204,7 @@ public class Worker implements Runnable {
 
             int counter = 1;
             StringBuilder resultString = new StringBuilder();
-            for (String entry : fileNameList) {
+            for (FilePair entry : fileNameList) {
                 resultString.append(counter++ + ". " + entry + "\n");
             }
             resultString.append("EOF\n");
@@ -233,9 +239,10 @@ public class Worker implements Runnable {
             return;
         }
 
+        FilePair temp = new FilePair(fileName, Integer.parseInt(chunkNum));
         //Check if file already exists, if not update the fileNameList
-        if(!fileNameList.contains(fileName)){
-            fileNameList.add(fileName);
+        if(!fileNameList.contains(temp)){
+            fileNameList.add(temp);
             fileExisted = false;
         }
         //Update entry table (Subject to discussion, for now i just assume the client will advertise when he get the
@@ -260,6 +267,18 @@ public class Worker implements Runnable {
         toClient.write(UPDATE_SUCCESSFUL_MESSAGE);
         toClient.flush();
 
+    }
+
+    public void returnTotalChunkNumber(String filename) {
+        for(FilePair pair : fileNameList) {
+            if (pair.getFilename().equals(filename)) {
+                int totalChunkNumber = pair.getTotalChunkNumber();
+
+                // For now we just return the number only
+                toClient.write(totalChunkNumber);
+                toClient.flush();
+            }
+        }
     }
 
     public static boolean validIP (String ip) {

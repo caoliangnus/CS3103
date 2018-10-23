@@ -16,6 +16,8 @@ public class P2PClientUser extends Thread {
     public static final String DOWNLOAD_COMMAND = "DOWNLOAD";
     public static final String GET_COMMAND = "GET";
 
+    public static final int NUMBER_OF_THREADS_FOR_DOWNLOAD = 10;
+
     private static final String CHUNK_NOT_PRESENT_MESSAGE = "409 There is no such chunk.";
     private static final String INVALID_USER_INPUT = "Invalid User Input. Please enter one number only.\n";
     private static final String INVALID_USER_INPUT_NUMBER = "Please enter number only.\n";
@@ -143,99 +145,124 @@ public class P2PClientUser extends Thread {
         System.out.println();
     }
 
+//    private void downloadFile() {
+//        System.out.println("Please enter the name of the file to download: ");
+//        String filename = input.nextLine();
+//        String reply;
+//
+//        BufferedOutputStream bos = null;
+//        try {
+//            // We put true to append because we want to add on to the end of the file, chunk by chunk.
+//            bos = new BufferedOutputStream(new FileOutputStream(filename, true));
+//        } catch (FileNotFoundException e) {
+//            // It means that either the path given is to a directory, or if the file
+//            // does not exist, it cannot be created.
+//            e.printStackTrace();
+//        }
+//
+//        // Do we want to multithread here? For now, I will be doing NO multithreading.
+//        int chunkNumber = 1;
+//        while(true) {
+//            String request = DOWNLOAD_COMMAND + " " + filename + " " + chunkNumber + "\n";
+//            toServer.write(request);
+//            toServer.flush();
+//
+//            while (true) {
+//                if (fromServer.hasNextLine()) {
+//                    reply = fromServer.nextLine();
+//                    break;
+//                }
+//            }
+//
+//            boolean hasReadChunk = false;
+//
+//            // Check reply. If reply says there is no more chunks, then download of
+//            // file has completed.
+//            if (reply.equals(CHUNK_NOT_PRESENT_MESSAGE)) {
+//                System.out.println("Download of " + filename + " is completed.");
+//                try {
+//                    bos.close();
+//
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//                return;
+//            }
+//            String[] listOfAddresses = reply.split(",");
+//
+//
+//            // Now, loop through the list of addresses and try to establish a connection and download chunk
+//
+//            for (int i = 0; i < listOfAddresses.length; i++) {
+//                try {
+//                    System.out.println("CONNECTING: " + listOfAddresses[i]);
+//                    Socket downloadSocket = new Socket(listOfAddresses[i], CLIENT_SERVER_PORT);
+//
+//                    // Send request to peer-transient-server via PrintWriter
+//                    PrintWriter downloadSocketOutput = new PrintWriter(downloadSocket.getOutputStream(), true);
+//                    // Read in chunks in bytes via InputStream
+//                    BufferedInputStream fromTransientServer = new BufferedInputStream(downloadSocket.getInputStream());
+//                    // Buffer to store byte data from transient server to write into file
+//                    byte[] buffer = new byte[CHUNK_SIZE];
+//
+//                    String clientRequest = GET_COMMAND + " " + filename + " " + chunkNumber + "\n";
+//                    downloadSocketOutput.write(clientRequest);
+//                    downloadSocketOutput.flush();
+//
+//                    int bytesRead = fromTransientServer.read(buffer, 0, CHUNK_SIZE);
+//
+//                    if(bytesRead > 0) {
+//                        hasReadChunk = true;
+//
+//
+//                        // Append to file.
+//                        bos.write(buffer, 0, bytesRead);
+//                        bos.flush();
+//                        System.out.println("Chunk " + chunkNumber + " has been downloaded.");
+//                        downloadSocket.close();
+//                        break;
+//                    } else {
+//                        // Cannot read data from the peer despite being able to connect. Continue to the next IP.
+//                        downloadSocket.close();
+//                        continue;
+//                    }
+//
+//                } catch (Exception e) {
+//                    // for now, we just continue to the next IP to download the chunk
+//                    continue;
+//                }
+//            }
+//            if (hasReadChunk) {
+//                // current chunk has been read and written to file. Move on to the next chunk
+//                chunkNumber++;
+//            }
+//
+//        }
+//    }
+
     private void downloadFile() {
+        // Initialization
         System.out.println("Please enter the name of the file to download: ");
-        String filename = input.nextLine();
+        String filename = input.nextLine().trim();
+
+        // Get total chunk number first
+        toServer.println("CHUNK " + filename + "\n");
         String reply;
-
-        BufferedOutputStream bos = null;
-        try {
-            // We put true to append because we want to add on to the end of the file, chunk by chunk.
-            bos = new BufferedOutputStream(new FileOutputStream(filename, true));
-        } catch (FileNotFoundException e) {
-            // It means that either the path given is to a directory, or if the file
-            // does not exist, it cannot be created.
-            e.printStackTrace();
-        }
-
-        // Do we want to multithread here? For now, I will be doing NO multithreading.
-        int chunkNumber = 1;
         while(true) {
-            String request = DOWNLOAD_COMMAND + " " + filename + " " + chunkNumber + "\n";
-            toServer.write(request);
-            toServer.flush();
-
-            while (true) {
-                if (fromServer.hasNextLine()) {
-                    reply = fromServer.nextLine();
-                    break;
-                }
+            if(fromServer.hasNextLine()) {
+                reply = fromServer.nextLine();
+                break;
             }
-
-            boolean hasReadChunk = false;
-
-            // Check reply. If reply says there is no more chunks, then download of
-            // file has completed.
-            if (reply.equals(CHUNK_NOT_PRESENT_MESSAGE)) {
-                System.out.println("Download of " + filename + " is completed.");
-                try {
-                    bos.close();
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                return;
-            }
-            String[] listOfAddresses = reply.split(",");
-
-
-            // Now, loop through the list of addresses and try to establish a connection and download chunk
-
-            for (int i = 0; i < listOfAddresses.length; i++) {
-                try {
-                    System.out.println("CONNECTING: " + listOfAddresses[i]);
-                    Socket downloadSocket = new Socket(listOfAddresses[i], CLIENT_SERVER_PORT);
-
-                    // Send request to peer-transient-server via PrintWriter
-                    PrintWriter downloadSocketOutput = new PrintWriter(downloadSocket.getOutputStream(), true);
-                    // Read in chunks in bytes via InputStream
-                    BufferedInputStream fromTransientServer = new BufferedInputStream(downloadSocket.getInputStream());
-                    // Buffer to store byte data from transient server to write into file
-                    byte[] buffer = new byte[CHUNK_SIZE];
-
-                    String clientRequest = GET_COMMAND + " " + filename + " " + chunkNumber + "\n";
-                    downloadSocketOutput.write(clientRequest);
-                    downloadSocketOutput.flush();
-
-                    int bytesRead = fromTransientServer.read(buffer, 0, CHUNK_SIZE);
-
-                    if(bytesRead > 0) {
-                        hasReadChunk = true;
-
-
-                        // Append to file.
-                        bos.write(buffer, 0, bytesRead);
-                        bos.flush();
-                        System.out.println("Chunk " + chunkNumber + " has been downloaded.");
-                        downloadSocket.close();
-                        break;
-                    } else {
-                        // Cannot read data from the peer despite being able to connect. Continue to the next IP.
-                        downloadSocket.close();
-                        continue;
-                    }
-
-                } catch (Exception e) {
-                    // for now, we just continue to the next IP to download the chunk
-                    continue;
-                }
-            }
-            if (hasReadChunk) {
-                // current chunk has been read and written to file. Move on to the next chunk
-                chunkNumber++;
-            }
-
         }
+
+        // Should do error handling here, if the file does not exist, but we do that later
+        int totalChunkNumber = Integer.parseInt(reply);
+
+        P2PFile fileToDownload = new P2PFile(filename, totalChunkNumber);
+
+
+
+
     }
 
     private void informAndUpdate() {
