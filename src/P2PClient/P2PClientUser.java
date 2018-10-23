@@ -3,7 +3,12 @@ package P2PClient;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 
 public class P2PClientUser extends Thread {
 
@@ -255,11 +260,39 @@ public class P2PClientUser extends Thread {
             }
         }
 
-        // Should do error handling here, if the file does not exist, but we do that later
-        int totalChunkNumber = Integer.parseInt(reply);
+        int numberOfChunks = Integer.parseInt(reply);
+        P2PFile fileToDownload = new P2PFile(filename, numberOfChunks);
+        int status;
+        int[] tempMap = new int[numberOfChunks];
+        Arrays.fill(tempMap, -1);
+        AtomicIntegerArray map = new AtomicIntegerArray(tempMap);
 
-        P2PFile fileToDownload = new P2PFile(filename, totalChunkNumber);
+        ExecutorService threadPool = Executors.newFixedThreadPool(10);
+        String IPReply = "";
 
+        while(!fileToDownload.hasCompleted()) {
+
+            // Check for any chunks that is available for downloading
+            for (int i = 0; i < numberOfChunks; i++) {
+                status = map.getAndSet(i,0);
+                if (status == -1) {
+
+                    // Obtain a list of IP address to download from
+                    String IPRequest = DOWNLOAD_COMMAND + " " + filename + " " + i + "\n";
+                    toServer.write(IPRequest);
+                    toServer.flush();
+
+                    while (true) {
+                        if (fromServer.hasNextLine()) {
+                            IPReply = fromServer.nextLine();
+                            break;
+                        }
+                    }
+                    String[] splitAddress = IPReply.split(",");
+                    threadPool.execute(new P2PClientUserWorker(i, fileToDownload, splitAddress, map));
+                }
+            }
+        }
 
 
 

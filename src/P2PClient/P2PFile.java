@@ -3,12 +3,10 @@ package P2PClient;
 import java.io.BufferedOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.TreeMap;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.atomic.AtomicIntegerArray;
+
 
 public class P2PFile {
 
@@ -23,7 +21,7 @@ public class P2PFile {
     public P2PFile(String filename, int numberOfChunks) {
         this.filename = filename;
         this.numberOfChunks = numberOfChunks;
-        chunks = new TreeMap<Integer, byte[]>();
+        chunks = new TreeMap<>();
     }
 
     public String getFileName() {
@@ -58,6 +56,16 @@ public class P2PFile {
                 break;
             }
         }
+    }
+
+    public List<Integer> getChunksThatAreNotDownloaded() {
+        List<Integer> list = new ArrayList<>();
+        for(int i=1; i<=numberOfChunks; i++){
+            if(!chunks.containsKey(i)){
+                list.add(i);
+            }
+        }
+        return list;
     }
 
     private void copyToFile(int index) {
