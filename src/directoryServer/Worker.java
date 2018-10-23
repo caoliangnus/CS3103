@@ -162,7 +162,7 @@ public class Worker implements Runnable {
 
     private static void shuffleList(List<Entry> entryList) {
         int n = entryList.size();
-        Random random = new Random();
+        Random random = new Random(System.currentTimeMillis());
         random.nextInt();
         for (int i = 0; i < n; i++) {
             int randomIndex = i + random.nextInt(n - i);
