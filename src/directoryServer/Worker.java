@@ -3,11 +3,7 @@ package directoryServer;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class Worker implements Runnable {
 
@@ -129,6 +125,9 @@ public class Worker implements Runnable {
         StringBuilder IPAddresses = new StringBuilder();
         int chunkNumber = Integer.parseInt(chunkNum);
         int counter = 0;
+
+        shuffleList(listOfEntries);
+
         for(Entry entry : listOfEntries) {
 
             // For now, we just take the first 10 IP addresses.
@@ -159,6 +158,22 @@ public class Worker implements Runnable {
 
         toClient.write(reply);
         toClient.flush();
+    }
+
+    private static void shuffleList(List<Entry> entryList) {
+        int n = entryList.size();
+        Random random = new Random();
+        random.nextInt();
+        for (int i = 0; i < n; i++) {
+            int randomIndex = i + random.nextInt(n - i);
+            swap(entryList, i, randomIndex);
+        }
+    }
+
+    private static void swap(List<Entry> entryList, int i, int randomIndex) {
+        Entry tempEntry = entryList.get(i);
+        entryList.set(i, entryList.get(randomIndex));
+        entryList.set(randomIndex, tempEntry);
     }
 
     private synchronized void initializeClientExit(String IPAddress) {
