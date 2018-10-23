@@ -3,11 +3,7 @@ package directoryServer;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class Worker implements Runnable {
 
@@ -129,21 +125,28 @@ public class Worker implements Runnable {
         StringBuilder IPAddresses = new StringBuilder();
         int chunkNumber = Integer.parseInt(chunkNum);
         int counter = 0;
-        for(Entry entry : listOfEntries) {
 
-            // For now, we just take the first 10 IP addresses.
-            // However, we might want to change the number of addresses, and also change the way
-            // we choose the addresses.
-            if (entry.getChunkNumber() == chunkNumber) {
-                IPAddresses.append(entry.getAddress());
-                // Separate the IP address using commas for easy splitting at Client side.
-                IPAddresses.append(',');
-                counter++;
-                doesChunkExist = true;
-                if (counter == MAX_IP_ADDRESS_RETURNED) {
-                    break;
-                }
+        //extract list of ip addresses which have this chunk
+        List<String> chunkList = null;
+        for(int k=0;k<listOfEntries.size();k++){
+            if(listOfEntries.get(k).getChunkNumber() == chunkNumber){
+                chunkList.add(listOfEntries.get(k).getAddress());
             }
+        }
+
+        //randomize the list of IP addresses
+        shuffleList(chunkList);
+
+        //generate message with at most 10 ip addresses
+        for(String ip : chunkList) {
+            IPAddresses.append(ip);
+            IPAddresses.append(',');
+            counter++;
+            doesChunkExist = true;
+            if (counter == MAX_IP_ADDRESS_RETURNED) {
+                break;
+            }
+
         }
 
         // If there is the filename, but no such chunks, then it means this
@@ -159,6 +162,22 @@ public class Worker implements Runnable {
 
         toClient.write(reply);
         toClient.flush();
+    }
+
+    private static void shuffleList(List<String> entryList) {
+        int n = entryList.size();
+        Random random = new Random(System.currentTimeMillis());
+        random.nextInt();
+        for (int i = 0; i < n; i++) {
+            int randomIndex = i + random.nextInt(n - i);
+            swap(entryList, i, randomIndex);
+        }
+    }
+
+    private static void swap(List<String> entryList, int i, int randomIndex) {
+        String tempEntry = entryList.get(i);
+        entryList.set(i, entryList.get(randomIndex));
+        entryList.set(randomIndex, tempEntry);
     }
 
     private synchronized void initializeClientExit(String IPAddress) {
