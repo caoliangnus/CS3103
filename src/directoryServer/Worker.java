@@ -121,24 +121,28 @@ public class Worker implements Runnable {
         StringBuilder IPAddresses = new StringBuilder();
         int chunkNumber = Integer.parseInt(chunkNum);
         int counter = 0;
-        //randomize the list of IP addresses
-        shuffleList(listOfEntries);
 
-        for(Entry entry : listOfEntries) {
-
-            // For now, we just take the first 10 IP addresses.
-            // However, we might want to change the number of addresses, and also change the way
-            // we choose the addresses.
-            if (entry.getChunkNumber() == chunkNumber) {
-                IPAddresses.append(entry.getAddress());
-                // Separate the IP address using commas for easy splitting at Client side.
-                IPAddresses.append(',');
-                counter++;
-                doesChunkExist = true;
-                if (counter == MAX_IP_ADDRESS_RETURNED) {
-                    break;
-                }
+        //extract list of ip addresses which have this chunk
+        List<String> chunkList = null;
+        for(int k=0;k<listOfEntries.size();k++){
+            if(listOfEntries.get(k).getChunkNumber() == chunkNumber){
+                chunkList.add(listOfEntries.get(k).getAddress());
             }
+        }
+
+        //randomize the list of IP addresses
+        shuffleList(chunkList);
+
+        //generate message with at most 10 ip addresses
+        for(String ip : chunkList) {
+            IPAddresses.append(ip);
+            IPAddresses.append(',');
+            counter++;
+            doesChunkExist = true;
+            if (counter == MAX_IP_ADDRESS_RETURNED) {
+                break;
+            }
+
         }
 
         // If there is the filename, but no such chunks, then it means this
@@ -156,7 +160,7 @@ public class Worker implements Runnable {
         toClient.flush();
     }
 
-    private static void shuffleList(List<Entry> entryList) {
+    private static void shuffleList(List<String> entryList) {
         int n = entryList.size();
         Random random = new Random(System.currentTimeMillis());
         random.nextInt();
@@ -166,8 +170,8 @@ public class Worker implements Runnable {
         }
     }
 
-    private static void swap(List<Entry> entryList, int i, int randomIndex) {
-        Entry tempEntry = entryList.get(i);
+    private static void swap(List<String> entryList, int i, int randomIndex) {
+        String tempEntry = entryList.get(i);
         entryList.set(i, entryList.get(randomIndex));
         entryList.set(randomIndex, tempEntry);
     }
