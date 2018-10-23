@@ -1,8 +1,10 @@
 package P2PClient;
 
 import java.io.*;
+import java.lang.reflect.Array;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class P2PClientUser extends Thread {
@@ -14,6 +16,7 @@ public class P2PClientUser extends Thread {
     public static final String EXIT_COMMAND = "EXIT";
     public static final String INFORM_COMMAND = "INFORM";
     public static final String DOWNLOAD_COMMAND = "DOWNLOAD";
+    public static final String PEERLIST_COMMAND = "PEERLIST";
     public static final String GET_COMMAND = "GET";
 
     private static final String CHUNK_NOT_PRESENT_MESSAGE = "409 There is no such chunk.";
@@ -158,84 +161,76 @@ public class P2PClientUser extends Thread {
             e.printStackTrace();
         }
 
-        // Do we want to multithread here? For now, I will be doing NO multithreading.
-        int chunkNumber = 1;
-        while(true) {
-            String request = DOWNLOAD_COMMAND + " " + filename + " " + chunkNumber + "\n";
-            toServer.write(request);
-            toServer.flush();
 
-            while (true) {
-                if (fromServer.hasNextLine()) {
-                    reply = fromServer.nextLine();
-                    break;
-                }
+        //Liang:
+        // 1. Send a request to obtain
+        //      * list of IP address contains the FILE
+        //      * total chunk number
+        // 2. After obtain the response
+        //      * Divide total chunk number by number of IP address to find (number of chunks per peer)
+        // 3. Create 3 array list
+        //      * Request List contains Runnerable class to download different part of chunks
+        //      * Thread List contains number of threads that are downloading the files together
+        //      * Content Array with size equal to Total Chunk Number
+        String requestPeerList = PEERLIST_COMMAND + " " + filename + "\n";
+        toServer.write(requestPeerList);
+        toServer.flush();
+
+        while (true) {
+            if (fromServer.hasNextLine()) {
+                reply = fromServer.nextLine();
+                break;
             }
-
-            boolean hasReadChunk = false;
-
-            // Check reply. If reply says there is no more chunks, then download of
-            // file has completed.
-            if (reply.equals(CHUNK_NOT_PRESENT_MESSAGE)) {
-                System.out.println("Download of " + filename + " is completed.");
-                try {
-                    bos.close();
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                return;
-            }
-            String[] listOfAddresses = reply.split(",");
-
-
-            // Now, loop through the list of addresses and try to establish a connection and download chunk
-
-            for (int i = 0; i < listOfAddresses.length; i++) {
-                try {
-                    System.out.println("CONNECTING: " + listOfAddresses[i]);
-                    Socket downloadSocket = new Socket(listOfAddresses[i], CLIENT_SERVER_PORT);
-
-                    // Send request to peer-transient-server via PrintWriter
-                    PrintWriter downloadSocketOutput = new PrintWriter(downloadSocket.getOutputStream(), true);
-                    // Read in chunks in bytes via InputStream
-                    BufferedInputStream fromTransientServer = new BufferedInputStream(downloadSocket.getInputStream());
-                    // Buffer to store byte data from transient server to write into file
-                    byte[] buffer = new byte[CHUNK_SIZE];
-
-                    String clientRequest = GET_COMMAND + " " + filename + " " + chunkNumber + "\n";
-                    downloadSocketOutput.write(clientRequest);
-                    downloadSocketOutput.flush();
-
-                    int bytesRead = fromTransientServer.read(buffer, 0, CHUNK_SIZE);
-
-                    if(bytesRead > 0) {
-                        hasReadChunk = true;
-
-
-                        // Append to file.
-                        bos.write(buffer, 0, bytesRead);
-                        bos.flush();
-                        System.out.println("Chunk " + chunkNumber + " has been downloaded.");
-                        downloadSocket.close();
-                        break;
-                    } else {
-                        // Cannot read data from the peer despite being able to connect. Continue to the next IP.
-                        downloadSocket.close();
-                        continue;
-                    }
-
-                } catch (Exception e) {
-                    // for now, we just continue to the next IP to download the chunk
-                    continue;
-                }
-            }
-            if (hasReadChunk) {
-                // current chunk has been read and written to file. Move on to the next chunk
-                chunkNumber++;
-            }
-
         }
+
+        String[] peerList = reply.split(",");
+        int totalChunkNumber = Integer.valueOf(peerList[0]);
+        int numOfChunksPerPeer = totalChunkNumber / peerList.length;
+
+        ArrayList<Requester> requestList = new ArrayList<>();
+        ArrayList<Thread> threadList = new ArrayList<>();
+        String[] contentList = new String[totalChunkNumber];
+
+        int chunkIndex = 0;
+
+        for(int i = 1; i < peerList.length;i++) {
+            Requester rc = new Requester(filename, chunkIndex, numOfChunksPerPeer);
+            requestList.add(rc);
+            chunkIndex = chunkIndex + numOfChunksPerPeer;
+
+            Thread t = new Thread(rc);
+            t.start();
+            threadList.add(t);
+        }
+
+        //Add another thread for the remaining chunks. Eg 151 / 3 = 50,
+        if (numOfChunksPerPeer * (peerList.length-1) < totalChunkNumber) {
+            int last = totalChunkNumber - numOfChunksPerPeer * (peerList.length-1);
+            Requester rc = new Requester(filename, chunkIndex, last);
+            requestList.add(rc);
+
+            Thread t = new Thread(rc);
+            t.start();
+            threadList.add(t);
+        }
+
+        int index = 0;
+        for (int i = 0; i < threadList.size(); i++) {
+            Thread t = threadList.get(i);
+            try {
+                t.join();
+                Requester rc = requestList.get(i);
+                ArrayList<String> content = rc.getContent();
+
+                for (int j = 0; j < content.size(); j++) {
+                    contentList[index++] = content.get(j);
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+
     }
 
     private void informAndUpdate() {
