@@ -17,10 +17,10 @@ public class P2PClientUserWorker implements Runnable {
     PrintWriter downloadSocketOutput;
     BufferedInputStream fromTransientServer;
     String[] addresses;
-    AtomicIntegerArray map;
+    int[] map;
 
 
-    public P2PClientUserWorker(int chunkToDownload, P2PFile fileToDownload, String[] addresses,AtomicIntegerArray map) {
+    public P2PClientUserWorker(int chunkToDownload, P2PFile fileToDownload, String[] addresses,int[] map) {
         this.fileToDownload = fileToDownload;
         this.chunkToDownload = chunkToDownload+1;
         this.addresses = addresses;
@@ -30,10 +30,11 @@ public class P2PClientUserWorker implements Runnable {
 
 
     private void downloadChunks() {
+        //System.out.println("here3.0");
 
         for (int i = 0; i < addresses.length; i++) {
                 try {
-                    System.out.println("CONNECTING: " + addresses[i]);
+//                    System.out.println("CONNECTING: " + addresses[i] + " " + chunkToDownload);
                     Socket downloadSocket = new Socket(addresses[i], CLIENT_SERVER_PORT);
 
                     // Send request to peer-transient-server via PrintWriter
@@ -46,22 +47,30 @@ public class P2PClientUserWorker implements Runnable {
                     String clientRequest = GET_COMMAND + " " + fileToDownload.getFileName() + " " + chunkToDownload + "\n";
                     downloadSocketOutput.write(clientRequest);
                     downloadSocketOutput.flush();
-                    fromTransientServer.read(buffer, 0, CHUNK_SIZE);
-
+                    //System.out.println("here3");
+                    int size = fromTransientServer.read(buffer, 0, CHUNK_SIZE);
+                    //System.out.println("here4");
+//                    System.out.println("Chunk: " + chunkToDownload + " SIZE " + size);
 
                     fileToDownload.setChunk(chunkToDownload-1, buffer);
-                    map.set(chunkToDownload-1,1);
-                    fileToDownload.flush();
+                    P2PClientUser.mapMutex.acquire();
+                    //System.out.println("here5");
+                    map[chunkToDownload-1] = 1;
+                    P2PClientUser.mapMutex.release();
+                    //System.out.println("here6");
+//                    fileToDownload.flush();
                     downloadSocket.close();
+                    return;
 
 
                 } catch (Exception e) {
                     // for now, we just continue to the next IP to download the chunk
                     continue;
                 } finally {
-                    if(map.get(chunkToDownload -1)!=1 ) {
-                        map.set(chunkToDownload-1, 0);
-                    }
+                    P2PClientUser.mapMutex.release();
+//                    if(map.get(chunkToDownload -1)!=1 ) {
+//                        map.set(chunkToDownload-1, 0);
+//                    }
                 }
             }
 
@@ -69,6 +78,7 @@ public class P2PClientUserWorker implements Runnable {
     }
 
     public void run() {
+        //System.out.println("here6");
         downloadChunks();
     }
 }
