@@ -190,7 +190,7 @@ public class Worker implements Runnable {
                     // I am not sure if we should do it this way
                     // We can have a flag to prevent all the extra looping
                     FilePair temp = new FilePair(filename, 0);
-                    if (fileNameList.contains(temp)){
+                    if(list.size() == 0){
                         fileNameList.remove(temp);
                     }
                 }
@@ -288,6 +288,14 @@ public class Worker implements Runnable {
     }
 
     public void returnTotalChunkNumber(String filename) {
+
+        FilePair temp = new FilePair(filename, 0);
+        if (!fileNameList.contains(temp)) {
+            toClient.write(FILE_NOT_PRESENT_MESSAGE);
+            toClient.flush();
+            return;
+        }
+
         for(FilePair pair : fileNameList) {
             if (pair.getFilename().equals(filename)) {
                 int totalChunkNumber = pair.getTotalChunkNumber();
@@ -296,8 +304,10 @@ public class Worker implements Runnable {
                 // For now we just return the number only
                 toClient.write(reply);
                 toClient.flush();
+                return;
             }
         }
+
     }
 
     public static boolean validIP (String ip) {
