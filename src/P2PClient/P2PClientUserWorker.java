@@ -12,7 +12,7 @@ public class P2PClientUserWorker implements Runnable {
     public static final int CLIENT_SERVER_PORT = 9999;
     public static final int CHUNK_SIZE = 1024;
 
-    int chunksToDownload;
+    int chunkToDownload;
     private P2PFile fileToDownload;
     PrintWriter downloadSocketOutput;
     BufferedInputStream fromTransientServer;
@@ -22,7 +22,7 @@ public class P2PClientUserWorker implements Runnable {
 
     public P2PClientUserWorker(int chunkToDownload, P2PFile fileToDownload, String[] addresses,AtomicIntegerArray map) {
         this.fileToDownload = fileToDownload;
-        this.chunksToDownload = chunksToDownload+1;
+        this.chunkToDownload = chunkToDownload+1;
         this.addresses = addresses;
         this.map = map;
 
@@ -37,20 +37,21 @@ public class P2PClientUserWorker implements Runnable {
                     Socket downloadSocket = new Socket(addresses[i], CLIENT_SERVER_PORT);
 
                     // Send request to peer-transient-server via PrintWriter
-                    PrintWriter downloadSocketOutput = new PrintWriter(downloadSocket.getOutputStream(), true);
+                    downloadSocketOutput = new PrintWriter(downloadSocket.getOutputStream(), true);
                     // Read in chunks in bytes via InputStream
-                    BufferedInputStream fromTransientServer = new BufferedInputStream(downloadSocket.getInputStream());
+                    fromTransientServer = new BufferedInputStream(downloadSocket.getInputStream());
                     // Buffer to store byte data from transient server to write into file
                     byte[] buffer = new byte[CHUNK_SIZE];
 
-                    String clientRequest = GET_COMMAND + " " + fileToDownload.getFileName() + " " + chunksToDownload + "\n";
+                    String clientRequest = GET_COMMAND + " " + fileToDownload.getFileName() + " " + chunkToDownload + "\n";
                     downloadSocketOutput.write(clientRequest);
                     downloadSocketOutput.flush();
                     fromTransientServer.read(buffer, 0, CHUNK_SIZE);
 
 
-                    fileToDownload.setChunk(chunksToDownload-1, buffer);
-                    map.set(chunksToDownload-1,1);
+                    fileToDownload.setChunk(chunkToDownload-1, buffer);
+                    map.set(chunkToDownload-1,1);
+                    fileToDownload.flush();
                     downloadSocket.close();
 
 
@@ -58,8 +59,8 @@ public class P2PClientUserWorker implements Runnable {
                     // for now, we just continue to the next IP to download the chunk
                     continue;
                 } finally {
-                    if(map.get(chunksToDownload -1)!=1 ) {
-                        map.set(chunksToDownload-1, 0);
+                    if(map.get(chunkToDownload -1)!=1 ) {
+                        map.set(chunkToDownload-1, 0);
                     }
                 }
             }

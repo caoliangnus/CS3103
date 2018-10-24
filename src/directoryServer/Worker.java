@@ -127,7 +127,7 @@ public class Worker implements Runnable {
         int counter = 0;
 
         //extract list of ip addresses which have this chunk
-        List<String> chunkList = null;
+        List<String> chunkList = new ArrayList<>();
         for(int k=0;k<listOfEntries.size();k++){
             if(listOfEntries.get(k).getChunkNumber() == chunkNumber){
                 chunkList.add(listOfEntries.get(k).getAddress());
@@ -146,7 +146,6 @@ public class Worker implements Runnable {
             if (counter == MAX_IP_ADDRESS_RETURNED) {
                 break;
             }
-
         }
 
         // If there is the filename, but no such chunks, then it means this
@@ -292,9 +291,10 @@ public class Worker implements Runnable {
         for(FilePair pair : fileNameList) {
             if (pair.getFilename().equals(filename)) {
                 int totalChunkNumber = pair.getTotalChunkNumber();
+                String reply = totalChunkNumber + "\n";
 
                 // For now we just return the number only
-                toClient.write(totalChunkNumber);
+                toClient.write(reply);
                 toClient.flush();
             }
         }
