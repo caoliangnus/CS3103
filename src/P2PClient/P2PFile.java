@@ -11,7 +11,9 @@ import java.util.TreeMap;
 public class P2PFile {
 
     public static int CHUNK_SIZE = 1024;
+    private BufferedOutputStream bos;
 
+    // Open the file for writing first
     private String filename;
     private TreeMap<Integer, byte[]> chunks;
 
@@ -22,6 +24,16 @@ public class P2PFile {
         this.filename = filename;
         this.numberOfChunks = numberOfChunks;
         chunks = new TreeMap<>();
+
+        bos = null;
+        try {
+            // We put true to append because we want to add on to the end of the file, chunk by chunk.
+            bos = new BufferedOutputStream(new FileOutputStream(filename, true));
+        } catch (FileNotFoundException e) {
+            // It means that either the path given is to a directory, or if the file
+            // does not exist, it cannot be created.
+            e.printStackTrace();
+        }
     }
 
     public String getFileName() {
@@ -70,20 +82,8 @@ public class P2PFile {
 
     private void copyToFile(int index) {
 
-
         byte[] dataToWrite = chunks.get(index);
         int numberOfBytesToRead = 0;
-
-        // Open the file for writing first
-        BufferedOutputStream bos = null;
-        try {
-            // We put true to append because we want to add on to the end of the file, chunk by chunk.
-            bos = new BufferedOutputStream(new FileOutputStream(filename, true));
-        } catch (FileNotFoundException e) {
-            // It means that either the path given is to a directory, or if the file
-            // does not exist, it cannot be created.
-            e.printStackTrace();
-        }
 
         // First, find out how much to write to file
         if (dataToWrite[CHUNK_SIZE-1] != '\u0000') {
@@ -100,6 +100,7 @@ public class P2PFile {
         // Write the data into the file
         try {
             bos.write(dataToWrite, 0, numberOfBytesToRead);
+            bos.flush();
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println(e);

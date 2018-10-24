@@ -41,7 +41,7 @@ public class P2PClientUser extends Thread {
         try {
 //            clientRequestSocket = new Socket(InetAddress.getLocalHost(), SERVER_PORT);
 
-            clientRequestSocket = new Socket("172.25.107.221", SERVER_PORT);
+            clientRequestSocket = new Socket("172.25.105.154", SERVER_PORT);
             // Use toServer to send the request.
             toServer = new PrintWriter(clientRequestSocket.getOutputStream(), true);
             fromServer = new Scanner(clientRequestSocket.getInputStream());
@@ -256,6 +256,7 @@ public class P2PClientUser extends Thread {
         while(true) {
             if(fromServer.hasNextLine()) {
                 reply = fromServer.nextLine();
+                System.out.println(reply);
                 break;
             }
         }
@@ -278,7 +279,7 @@ public class P2PClientUser extends Thread {
                 if (status == -1) {
 
                     // Obtain a list of IP address to download from
-                    String IPRequest = DOWNLOAD_COMMAND + " " + filename + " " + i + "\n";
+                    String IPRequest = DOWNLOAD_COMMAND + " " + filename + " " + (i + 1) + "\n";
                     toServer.write(IPRequest);
                     toServer.flush();
 
