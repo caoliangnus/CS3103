@@ -60,6 +60,7 @@ public class P2PFile {
             treeMapMutex.acquire();
             if (chunks.containsKey(chunkNumber)) {
                 // Do something here
+                treeMapMutex.release();
                 return;
             }
 
