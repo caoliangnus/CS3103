@@ -38,7 +38,7 @@ public class P2PClientUser extends Thread {
     private PrintWriter toServer;
     private Scanner fromServer;
     private static Scanner input = new Scanner(System.in);
-    private String folderDirectory = "";
+    public static String folderDirectory = "";
 
     private void handleUser() {
         try {
@@ -252,6 +252,13 @@ public class P2PClientUser extends Thread {
         // Initialization
         System.out.println("Please enter the name of the file to download: ");
         String filename = input.nextLine().trim();
+
+        File temp = new File(P2PClientUser.folderDirectory + File.separator +  filename);
+
+        if (temp.exists()) {
+            System.out.println("File with same name already exist! " + temp.getAbsolutePath());
+            return;
+        }
 
         // Get total chunk number first
         toServer.println("CHUNK " + filename + "\n");
