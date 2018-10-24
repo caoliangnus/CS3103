@@ -1,9 +1,6 @@
 package P2PClient;
 
-import java.io.BufferedOutputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.Semaphore;
 
@@ -144,7 +141,7 @@ public class P2PFile {
         BufferedOutputStream bos = null;
         try {
             // We put true to append because we want to add on to the end of the file, chunk by chunk.
-            bos = new BufferedOutputStream(new FileOutputStream(filename, true));
+            bos = new BufferedOutputStream(new FileOutputStream(P2PClientUser.folderDirectory + File.separator +  filename, true));
         } catch (FileNotFoundException e) {
             // It means that either the path given is to a directory, or if the file
             // does not exist, it cannot be created.
