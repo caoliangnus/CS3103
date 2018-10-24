@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 
 public class P2PClientUser extends Thread {
@@ -20,6 +21,8 @@ public class P2PClientUser extends Thread {
     public static final String INFORM_COMMAND = "INFORM";
     public static final String DOWNLOAD_COMMAND = "DOWNLOAD";
     public static final String GET_COMMAND = "GET";
+
+    public static Semaphore mapMutex = new Semaphore(1);
 
     public static final int NUMBER_OF_THREADS_FOR_DOWNLOAD = 10;
 
@@ -256,9 +259,14 @@ public class P2PClientUser extends Thread {
         while(true) {
             if(fromServer.hasNextLine()) {
                 reply = fromServer.nextLine();
-                System.out.println(reply);
+                System.out.println("Reply: " + reply);
                 break;
             }
+        }
+
+        if(reply.equals("403 There is no such file.")){
+            System.out.println("403 There is no such file.");
+            return;
         }
 
         int numberOfChunks = Integer.parseInt(reply);
@@ -266,36 +274,58 @@ public class P2PClientUser extends Thread {
         int status;
         int[] tempMap = new int[numberOfChunks];
         Arrays.fill(tempMap, -1);
-        AtomicIntegerArray map = new AtomicIntegerArray(tempMap);
+        //AtomicIntegerArray map = new AtomicIntegerArray(tempMap);
 
         ExecutorService threadPool = Executors.newFixedThreadPool(10);
         String IPReply = "";
 
         while(!fileToDownload.hasCompleted()) {
-
+//        System.out.println("infinite?");
             // Check for any chunks that is available for downloading
             for (int i = 0; i < numberOfChunks; i++) {
-                status = map.getAndSet(i,0);
+                //status = map.getAndSet(i,0);
+                try {
+                    mapMutex.acquire();
+                }catch(Exception e){
+                    e.printStackTrace();
+                    System.out.println(e);
+                    System.exit(1);
+                }
+                status = tempMap[i];
                 if (status == -1) {
-
+                    tempMap[i] = 0;
+                    mapMutex.release();
                     // Obtain a list of IP address to download from
                     String IPRequest = DOWNLOAD_COMMAND + " " + filename + " " + (i + 1) + "\n";
+//                    System.out.println("chunk: " + i);
                     toServer.write(IPRequest);
                     toServer.flush();
 
                     while (true) {
+                        //System.out.println("Here");
                         if (fromServer.hasNextLine()) {
                             IPReply = fromServer.nextLine();
+                            System.out.println("reply from server ip: " + IPReply);
                             break;
                         }
                     }
+                   // System.out.println("Here2");
+//                    System.out.println(threadPool.isShutdown());
                     String[] splitAddress = IPReply.split(",");
-                    threadPool.execute(new P2PClientUserWorker(i, fileToDownload, splitAddress, map));
+
+//                    P2PClientUserWorker worker = new P2PClientUserWorker(i, fileToDownload, splitAddress, tempMap);
+//                    worker.start();
+                    threadPool.execute(new P2PClientUserWorker(i, fileToDownload, splitAddress, tempMap));
+                }else{
+                    mapMutex.release();
                 }
             }
         }
 
-
+        System.out.println("Outside");
+        threadPool.shutdown();
+        fileToDownload.writeToFile();
+        
 
     }
 
