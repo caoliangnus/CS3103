@@ -21,7 +21,7 @@ public class P2PClientServerWorker implements Runnable {
 
     public P2PClientServerWorker(Socket peerSocket) {
         this.peerSocket = peerSocket;
-        System.out.println("Inside P2PClientServerWorker constructor");
+        //System.out.println("Inside P2PClientServerWorker constructor");
         try {
             fromPeer = new Scanner(this.peerSocket.getInputStream());
             toPeer = new BufferedOutputStream(this.peerSocket.getOutputStream());
@@ -35,7 +35,7 @@ public class P2PClientServerWorker implements Runnable {
 
     private void processPeerFileDownloadRequest() {
         String request;
-        System.out.println("Inside processPeerFileDownloadRequest");
+        //System.out.println("Inside processPeerFileDownloadRequest");
         while(true) {
             if (fromPeer.hasNextLine()) {
                 request = fromPeer.nextLine();
@@ -60,7 +60,7 @@ public class P2PClientServerWorker implements Runnable {
 
         String filename = splitRequest[1];
         int requestChunk = Integer.parseInt(splitRequest[2]);
-        System.out.println(requestChunk);
+        System.out.println("Requester IP: " + peerSocket.getRemoteSocketAddress() + ", File Name: " + filename + ", Chunk Requested: " + requestChunk);
         byte[] buffer;
         File requestedFile = new File(filename);
         int noOfChunksOfFile = (int) (requestedFile.length() / CHUNK_SIZE) + 1;
@@ -80,8 +80,8 @@ public class P2PClientServerWorker implements Runnable {
             return;
         }
 
-        System.out.println(requestChunk);
-        System.out.println("Already here.");
+        //System.out.println(requestChunk);
+        //System.out.println("Already here.");
         try {
             buffer = new byte[CHUNK_SIZE];
             bis.skip((requestChunk-1)*CHUNK_SIZE);
@@ -89,7 +89,7 @@ public class P2PClientServerWorker implements Runnable {
             if (numberOfBytesRead < 1) {
                 // Need to do something and inform peer.
             }else {
-                System.out.println(numberOfBytesRead);
+                //System.out.println(numberOfBytesRead);
                 toPeer.write(buffer, 0, numberOfBytesRead);
                 toPeer.flush();
                 toPeerSimplified.write("Chunk " + requestChunk + " of file "
