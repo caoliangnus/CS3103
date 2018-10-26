@@ -57,11 +57,11 @@ public class Worker implements Runnable {
             try {
                 Scanner input = new Scanner(connectionSocket.getInputStream());
                 String request;
-                System.out.println("WAITING FOR REQUEST: ");
+                System.out.println("Waiting for request from " + connectionSocket.getRemoteSocketAddress());
                 while(true) {
                     if(input.hasNextLine()) {
                         request = input.nextLine();
-                        System.out.println(request);
+                        System.out.println("From " + connectionSocket.getRemoteSocketAddress() + ": " + request);
                         break;
                     }
                 }
@@ -159,6 +159,7 @@ public class Worker implements Runnable {
         String reply = IPAddresses.toString().substring(0, IPAddresses.length()-1);
         reply = reply + "\n";
 
+        System.out.println("Return IP address list: " + reply);
         toClient.write(reply);
         toClient.flush();
     }
@@ -215,7 +216,6 @@ public class Worker implements Runnable {
     private synchronized void sendListOfAvailableFiles() {
 
         if (fileNameList.isEmpty()) {
-            System.out.println("EMPTY");
             toClient.write(FILE_LIST_EMPTY_MESSAGE);
             toClient.flush();
         } else {

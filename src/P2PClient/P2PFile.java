@@ -42,8 +42,6 @@ public class P2PFile {
         boolean result = true;
         try {
             treeMapMutex.acquire();
-            System.out.println("Inside P2PFile hasCompleted. Size: " + chunks.size() + "No, Chunk " + numberOfChunks);
-//            System.out.println("numberOfChunks: " + numberOfChunks);
             result = numberOfChunks == chunks.size();
             treeMapMutex.release();
         }catch(Exception e) {
@@ -64,8 +62,6 @@ public class P2PFile {
                 return;
             }
 
-            System.out.println("Set " + chunkNumber);
-
             chunks.put(chunkNumber, data);
             treeMapMutex.release();
         } catch (Exception e) {
@@ -80,8 +76,6 @@ public class P2PFile {
         if (chunks.get(counter) == null) {
             return;
         }
-
-        System.out.println("Current Counter: " + counter);
 
         for (int i = counter; i < numberOfChunks; i++) {
             if (chunks.get(counter) != null) {
@@ -134,7 +128,9 @@ public class P2PFile {
     }
 
     public boolean writeToFile() {
-        System.out.println("Writing to File");
+        System.out.println("Writing to file: " + filename + "Total Chunk No: " + chunks.size());
+        System.out.println("Location: " + (P2PClientUser.folderDirectory + File.separator +  filename));
+        System.out.println();
         Set<Integer> keySet = chunks.keySet();
         Iterator<Integer> itr = keySet.iterator();
 
