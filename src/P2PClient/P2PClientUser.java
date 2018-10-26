@@ -29,6 +29,8 @@ public class P2PClientUser extends Thread {
     private static final String CHUNK_NOT_PRESENT_MESSAGE = "409 There is no such chunk.";
     private static final String INVALID_USER_INPUT = "Invalid User Input. Please enter one number only.\n";
     private static final String INVALID_USER_INPUT_NUMBER = "Please enter number only.\n";
+    private static final String INVALID_OPTION_NUMBER = "There is no such option number!\n";
+
 
 
 
@@ -102,6 +104,7 @@ public class P2PClientUser extends Thread {
                         exitFromProgram();
                         break;
                     default:
+                        System.out.println(INVALID_OPTION_NUMBER);
                         break;
                 }
 
@@ -347,13 +350,21 @@ public class P2PClientUser extends Thread {
             }
 
             //Obtaining file name
+            String fileName;
+            File advertisingFile;
             System.out.println("Please provide the file name you wish to advertise ");
-            String fileName = input.nextLine().trim();
-            File advertisingFile = new File(advertisingFolder + File.separator + fileName);
-            //check whether if the indicated file exists and whether if it is a file
-            if (!advertisingFile.exists() || !advertisingFile.isFile()) {
-                System.out.println("File not found, please re-enter valid file name of existing file in this folder: ");
-                return;
+            while(true) {
+                fileName = input.nextLine().trim();
+                if (fileName.equals("Quit")) {
+                    return;
+                }
+                advertisingFile = new File(advertisingFolder + File.separator + fileName);
+                //check whether if the indicated file exists and whether if it is a file
+                if (!advertisingFile.exists() || !advertisingFile.isFile()) {
+                    System.out.println("File not found, please re-enter valid file name of existing file in this folder (or type Quit to go back to Menu): ");
+                }else{
+                    break;
+                }
             }
 
             //calculate number of chunk
