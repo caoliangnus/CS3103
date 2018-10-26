@@ -3,11 +3,7 @@ package directoryServer;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class Worker implements Runnable {
 
@@ -17,6 +13,7 @@ public class Worker implements Runnable {
     private static final String EXIT_COMMAND = "EXIT";
     private static final String INFORM_COMMAND = "INFORM";
     private static final String DOWNLOAD_COMMAND = "DOWNLOAD";
+    private static final String CHUNK_COMMAND = "CHUNK";
 
     // List of success code and message to return
     private static final String FILE_FOUND_MESSAGE = "201 There is such a file.\n";
@@ -41,7 +38,7 @@ public class Worker implements Runnable {
 
     private Socket connectionSocket;
     private PrintWriter toClient;
-    private List<String> fileNameList = DirectoryServerMain.fileNameList;
+    private List<FilePair> fileNameList = DirectoryServerMain.fileNameList;
     private Hashtable<String, ArrayList<Entry>> entryList = DirectoryServerMain.entryList;
 
     public Worker(Socket connectionSocket) {
@@ -90,6 +87,9 @@ public class Worker implements Runnable {
                     case EXIT_COMMAND:
                         initializeClientExit(splitRequest[1]);
                         break;
+                    case CHUNK_COMMAND:
+                        returnTotalChunkNumber(splitRequest[1]);
+                        break;
                     default:
                         // Should not come here. We should return an error code and message here.
                         toClient.println(INVALID_COMMAND_MESSAGE);
@@ -125,20 +125,26 @@ public class Worker implements Runnable {
         StringBuilder IPAddresses = new StringBuilder();
         int chunkNumber = Integer.parseInt(chunkNum);
         int counter = 0;
-        for(Entry entry : listOfEntries) {
 
-            // For now, we just take the first 10 IP addresses.
-            // However, we might want to change the number of addresses, and also change the way
-            // we choose the addresses.
-            if (entry.getChunkNumber() == chunkNumber) {
-                IPAddresses.append(entry.getAddress());
-                // Separate the IP address using commas for easy splitting at Client side.
-                IPAddresses.append(',');
-                counter++;
-                doesChunkExist = true;
-                if (counter == MAX_IP_ADDRESS_RETURNED) {
-                    break;
-                }
+        //extract list of ip addresses which have this chunk
+        List<String> chunkList = new ArrayList<>();
+        for(int k=0;k<listOfEntries.size();k++){
+            if(listOfEntries.get(k).getChunkNumber() == chunkNumber){
+                chunkList.add(listOfEntries.get(k).getAddress());
+            }
+        }
+
+        //randomize the list of IP addresses
+        shuffleList(chunkList);
+
+        //generate message with at most 10 ip addresses
+        for(String ip : chunkList) {
+            IPAddresses.append(ip);
+            IPAddresses.append(',');
+            counter++;
+            doesChunkExist = true;
+            if (counter == MAX_IP_ADDRESS_RETURNED) {
+                break;
             }
         }
 
@@ -157,6 +163,22 @@ public class Worker implements Runnable {
         toClient.flush();
     }
 
+    private static void shuffleList(List<String> entryList) {
+        int n = entryList.size();
+        Random random = new Random(System.currentTimeMillis());
+        random.nextInt();
+        for (int i = 0; i < n; i++) {
+            int randomIndex = i + random.nextInt(n - i);
+            swap(entryList, i, randomIndex);
+        }
+    }
+
+    private static void swap(List<String> entryList, int i, int randomIndex) {
+        String tempEntry = entryList.get(i);
+        entryList.set(i, entryList.get(randomIndex));
+        entryList.set(randomIndex, tempEntry);
+    }
+
     private synchronized void initializeClientExit(String IPAddress) {
         entryList.forEach((filename, list) -> {
             Iterator<Entry> iterator = list.iterator();
@@ -167,8 +189,9 @@ public class Worker implements Runnable {
 
                     // I am not sure if we should do it this way
                     // We can have a flag to prevent all the extra looping
-                    if (fileNameList.contains(filename)){
-                        fileNameList.remove(filename);
+                    FilePair temp = new FilePair(filename, 0);
+                    if(list.size() == 0){
+                        fileNameList.remove(temp);
                     }
                 }
             }
@@ -179,7 +202,8 @@ public class Worker implements Runnable {
     }
 
     private synchronized void searchForFile(String filename) {
-        if (fileNameList.contains(filename)) {
+        FilePair temp = new FilePair(filename, 0);
+        if (fileNameList.contains(temp)) {
             toClient.write(FILE_FOUND_MESSAGE);
             toClient.flush();
         }else{
@@ -198,7 +222,7 @@ public class Worker implements Runnable {
 
             int counter = 1;
             StringBuilder resultString = new StringBuilder();
-            for (String entry : fileNameList) {
+            for (FilePair entry : fileNameList) {
                 resultString.append(counter++ + ". " + entry + "\n");
             }
             resultString.append("EOF\n");
@@ -233,9 +257,10 @@ public class Worker implements Runnable {
             return;
         }
 
+        FilePair temp = new FilePair(fileName, Integer.parseInt(chunkNum));
         //Check if file already exists, if not update the fileNameList
-        if(!fileNameList.contains(fileName)){
-            fileNameList.add(fileName);
+        if(!fileNameList.contains(temp)){
+            fileNameList.add(temp);
             fileExisted = false;
         }
         //Update entry table (Subject to discussion, for now i just assume the client will advertise when he get the
@@ -259,6 +284,29 @@ public class Worker implements Runnable {
         }
         toClient.write(UPDATE_SUCCESSFUL_MESSAGE);
         toClient.flush();
+
+    }
+
+    public void returnTotalChunkNumber(String filename) {
+
+        FilePair temp = new FilePair(filename, 0);
+        if (!fileNameList.contains(temp)) {
+            toClient.write(FILE_NOT_PRESENT_MESSAGE);
+            toClient.flush();
+            return;
+        }
+
+        for(FilePair pair : fileNameList) {
+            if (pair.getFilename().equals(filename)) {
+                int totalChunkNumber = pair.getTotalChunkNumber();
+                String reply = totalChunkNumber + "\n";
+
+                // For now we just return the number only
+                toClient.write(reply);
+                toClient.flush();
+                return;
+            }
+        }
 
     }
 
