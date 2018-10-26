@@ -44,7 +44,7 @@ public class P2PClientUser extends Thread {
         try {
 //            clientRequestSocket = new Socket(InetAddress.getLocalHost(), SERVER_PORT);
 
-            clientRequestSocket = new Socket("172.25.105.154", SERVER_PORT);
+            clientRequestSocket = new Socket("172.25.97.81", SERVER_PORT);
             // Use toServer to send the request.
             toServer = new PrintWriter(clientRequestSocket.getOutputStream(), true);
             fromServer = new Scanner(clientRequestSocket.getInputStream());
