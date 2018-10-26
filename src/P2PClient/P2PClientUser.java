@@ -266,7 +266,6 @@ public class P2PClientUser extends Thread {
         while(true) {
             if(fromServer.hasNextLine()) {
                 reply = fromServer.nextLine();
-                System.out.println("Reply: " + reply);
                 break;
             }
         }
@@ -312,11 +311,9 @@ public class P2PClientUser extends Thread {
                         //System.out.println("Here");
                         if (fromServer.hasNextLine()) {
                             IPReply = fromServer.nextLine();
-                            System.out.println("reply from server ip: " + IPReply);
                             break;
                         }
                     }
-                   // System.out.println("Here2");
 //                    System.out.println(threadPool.isShutdown());
                     String[] splitAddress = IPReply.split(",");
 
@@ -329,7 +326,6 @@ public class P2PClientUser extends Thread {
             }
         }
 
-        System.out.println("Outside");
         threadPool.shutdown();
         fileToDownload.writeToFile();
         

@@ -30,7 +30,6 @@ public class P2PClientUserWorker implements Runnable {
 
 
     private void downloadChunks() {
-        //System.out.println("here3.0");
 
         for (int i = 0; i < addresses.length; i++) {
                 try {
@@ -47,17 +46,17 @@ public class P2PClientUserWorker implements Runnable {
                     String clientRequest = GET_COMMAND + " " + fileToDownload.getFileName() + " " + chunkToDownload + "\n";
                     downloadSocketOutput.write(clientRequest);
                     downloadSocketOutput.flush();
-                    //System.out.println("here3");
                     int size = fromTransientServer.read(buffer, 0, CHUNK_SIZE);
-                    //System.out.println("here4");
 //                    System.out.println("Chunk: " + chunkToDownload + " SIZE " + size);
 
                     fileToDownload.setChunk(chunkToDownload-1, buffer);
                     P2PClientUser.mapMutex.acquire();
-                    //System.out.println("here5");
                     map[chunkToDownload-1] = 1;
                     P2PClientUser.mapMutex.release();
-                    //System.out.println("here6");
+
+                    System.out.println("Downloading from: " + addresses[i] + " Chunk No." + chunkToDownload);
+
+
 //                    fileToDownload.flush();
                     downloadSocket.close();
                     return;
@@ -78,7 +77,6 @@ public class P2PClientUserWorker implements Runnable {
     }
 
     public void run() {
-        //System.out.println("here6");
         downloadChunks();
     }
 }
