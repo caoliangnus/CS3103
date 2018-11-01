@@ -1,7 +1,10 @@
 package P2PClient;
 
 import java.io.*;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Arrays;
 import java.util.List;
@@ -10,6 +13,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicIntegerArray;
+import Stun.*;
+import Stun.util.UtilityException;
 
 public class P2PClientUser extends Thread {
 
@@ -459,7 +464,47 @@ public class P2PClientUser extends Thread {
         }
     }
 
+    public void stun() throws IOException, MessageAttributeParsingException, UtilityException {
+        MessageHeader sendMH = new MessageHeader(MessageHeader.MessageHeaderType.BindingRequest);
+        ChangeRequest changeRequest = new ChangeRequest();
+        sendMH.addMessageAttribute(changeRequest);
+
+
+        byte[] data = sendMH.getBytes();
+        DatagramSocket s = null;
+        s = new DatagramSocket(5000);
+        /*InetSocketAddress address = new InetSocketAddress(InetAddress.getLocalHost(), 5000);
+        s.bind(address);*/
+        s.setReuseAddress(true);
+
+        DatagramPacket p = new DatagramPacket(data, data.length, InetAddress.getByName("stun.l.google.com"), 19302);
+        s.send(p);
+
+        DatagramPacket rp;
+
+        rp = new DatagramPacket(new byte[32], 32);
+
+        s.receive(rp);
+
+        MessageHeader receiveMH = new MessageHeader(MessageHeader.MessageHeaderType.BindingResponse);
+        receiveMH.parseAttributes(rp.getData());
+        MappedAddress ma = (MappedAddress) receiveMH
+                .getMessageAttribute(MessageAttribute.MessageAttributeType.MappedAddress);
+        System.out.println(ma.getAddress()+" "+ma.getPort());
+
+
+    }
+
     public void run() {
-        handleUser();
+        try {
+            stun();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (MessageAttributeParsingException e) {
+            e.printStackTrace();
+        } catch (UtilityException e) {
+            e.printStackTrace();
+        }
+        //handleUser();
     }
 }
