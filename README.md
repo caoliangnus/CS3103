@@ -1,4 +1,4 @@
-# CS3103
+# CS3103 Networking Project
 
 ## Team Members
 - Cao Liang
