@@ -7,10 +7,14 @@ public class Entry {
 
     private int chunkNumber;
     private String address;
+    private int port;
+    private String hostName;
 
-    public Entry(int chunkNumber, String address){
+    public Entry(int chunkNumber, String address, int port, String hostName){
         this.chunkNumber = chunkNumber;
         this.address = address;
+        this.port = port;
+        this.hostName = hostName;
     }
 
     public int getChunkNumber() {
@@ -30,13 +34,31 @@ public class Entry {
     }
 
 
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
+    }
+
+    public String getHostName() {
+        return hostName;
+    }
+
+    public void setHostName(String hostName) {
+        this.hostName = hostName;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Entry entry = (Entry) o;
         return chunkNumber == entry.chunkNumber &&
-                Objects.equals(address, entry.address);
+                port == entry.getPort() &&
+                hostName.equals(entry.getHostName()) &&
+                address.equals(entry.getAddress());
     }
 
     @Override
