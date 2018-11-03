@@ -2,12 +2,11 @@ package directoryServer;
 
 import java.net.Socket;
 
-public class IPSocketPair {
-
+public class SignalIPSocketPair {
     private String IPAddress;
     private Socket socket;
 
-    public IPSocketPair(String IPAddress, Socket socket) {
+    public SignalIPSocketPair(String IPAddress, Socket socket) {
         this.IPAddress = IPAddress;
         this.socket = socket;
     }
