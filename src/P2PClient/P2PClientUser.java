@@ -53,8 +53,11 @@ public class P2PClientUser extends Thread {
         try {
 //            clientControlSocket = new Socket(InetAddress.getLocalHost(), SERVER_PORT);
 
+//            String ip = "167.99.68.246";
+            String ip = "172.25.102.18";
+
             //Signaling Connection Socket
-            clientSignalSocket = new Socket("172.25.102.18", SERVER_PORT);
+            clientSignalSocket = new Socket(ip, SERVER_PORT);
             signalToServer = new PrintWriter(clientSignalSocket.getOutputStream(), true);
             signalFromServer = new Scanner(clientSignalSocket.getInputStream());
 
@@ -65,7 +68,7 @@ public class P2PClientUser extends Thread {
 
 
             //Data Connection Socket
-            clientDataSocket = new Socket("172.25.102.18", SERVER_PORT);
+            clientDataSocket = new Socket(ip, SERVER_PORT);
             dateToServer = new PrintWriter(clientDataSocket.getOutputStream(), true);
             dataFromServer = new Scanner(clientDataSocket.getInputStream());
             dataToTracker = new BufferedOutputStream(clientDataSocket.getOutputStream());
@@ -74,7 +77,7 @@ public class P2PClientUser extends Thread {
             dateToServer.println("DATA\n");
 
             //Control Connection Socket
-            clientControlSocket = new Socket("172.25.102.18", SERVER_PORT);
+            clientControlSocket = new Socket(ip, SERVER_PORT);
             // Use toServer to send the request.
             toServer = new PrintWriter(clientControlSocket.getOutputStream(), true);
             fromServer = new Scanner(clientControlSocket.getInputStream());

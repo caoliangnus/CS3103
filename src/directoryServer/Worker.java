@@ -157,7 +157,7 @@ public class Worker implements Runnable {
         //generate message with at most 10 ip addresses
         for(String ip : chunkList) {
             IPAddressesAndPorts.append(ip);
-            IPAddressesAndPorts.append(':');
+            IPAddressesAndPorts.append(',');
             counter++;
             doesChunkExist = true;
             if (counter == MAX_IP_ADDRESS_RETURNED) {

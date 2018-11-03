@@ -44,16 +44,8 @@ public class DataWorker extends Thread {
         SignaltoUploaderSocket.write(clientRequest);
         SignaltoUploaderSocket.flush();
 
-        System.out.println("REquest: " +  clientRequest);
-
-
         // Relay chunk to downloader
         int size = DatafromUploaderSocket.read(buffer, 0, CHUNK_SIZE);
-
-        System.out.println("BUFFER: " +  size);
-        String st = new String(buffer);
-        System.out.println(st);
-
         relayToDownloaderSocket.write(buffer, 0, size);
         relayToDownloaderSocket.flush();
 

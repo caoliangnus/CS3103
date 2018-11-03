@@ -55,7 +55,7 @@ public class P2PClientUserSignalWorker extends Thread {
             if (Integer.parseInt(splitRequest[2]) < 1) {
                 toPeerSimplified.write(INVALID_CHUNK_NUMBER_MESSAGE);
                 toPeerSimplified.flush();
-                System.out.println("Invalid chunk.");
+                System.out.println("Invalid chunk." );
                 return;
             }
 
@@ -64,11 +64,11 @@ public class P2PClientUserSignalWorker extends Thread {
             System.out.println("Requester IP: " + signalSocket.getRemoteSocketAddress() + ", File Name: " + filename + ", Chunk Requested: " + requestChunk);
 
             byte[] buffer;
-            File requestedFile = new File(filename);
+            File requestedFile = new File(P2PClientUser.folderDirectory + File.separator + filename);
             int noOfChunksOfFile = (int) (requestedFile.length() / CHUNK_SIZE) + 1;
             BufferedInputStream bis = null;
             try {
-                bis = new BufferedInputStream(new FileInputStream(filename));
+                bis = new BufferedInputStream(new FileInputStream(P2PClientUser.folderDirectory + File.separator + filename));
             } catch(Exception e) {
                 e.printStackTrace();
                 System.out.println(e);
@@ -78,7 +78,7 @@ public class P2PClientUserSignalWorker extends Thread {
             if (requestChunk > noOfChunksOfFile) {
                 toPeerSimplified.write(INVALID_CHUNK_NUMBER_MESSAGE);
                 toPeerSimplified.flush();
-                System.out.println("Invalid chunk.");
+                System.out.println("Invalid chunk." + " " + requestChunk + " " + noOfChunksOfFile);
                 return;
             }
 
@@ -97,7 +97,6 @@ public class P2PClientUserSignalWorker extends Thread {
                     toPeerSimplified.write("Chunk " + requestChunk + " of file "
                             + filename + " has been sent.");
                     toPeerSimplified.flush();
-                    return;
                 }
             } catch (Exception e) {
                 e.printStackTrace();
