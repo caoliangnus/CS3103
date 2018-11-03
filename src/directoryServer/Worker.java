@@ -368,6 +368,8 @@ public class Worker implements Runnable {
         String peerServerIP = peerServerIPPortArray[0];
         String peerServerPort = peerServerIPPortArray[1];
 
+        System.out.println("SERVER: " + peerServerIP +"PORT: " + peerServerPort);
+
 
         String IPMixed = connectionSocket.getRemoteSocketAddress().toString();
         String[] IPSplit = IPMixed.split(":");
@@ -380,16 +382,33 @@ public class Worker implements Runnable {
         for(int i=0; i< dataIPToSocketMapping.size(); i++ ) {
             DataIPSocketPair dataIPPair =  dataIPToSocketMapping.get(i);
 
-            if(dataIPPair.getIPAddress().trim().equals(IP.trim()) && dataIPPair.getPort().equals(port)){
+            if(dataIPPair.getIPAddress().trim().equals(IP.trim()) && dataIPPair.getPort().trim().equals(port.trim())){
                 downloaderDataSocket = dataIPPair.getSocket();
             }
         }
 
+
+        System.out.println("START TESTING:::::");
+        System.out.println("SER: " + peerServerIP);
+        System.out.println("PO: " + peerServerPort);
+
         for(int i=0; i< dataIPToSocketMapping.size(); i++ ) {
             DataIPSocketPair dataIPPair =  dataIPToSocketMapping.get(i);
-            if(dataIPPair.getIPAddress().trim().equals(peerServerIP.trim())  && dataIPPair.getPort().equals(peerServerPort)){
+
+            System.out.println(dataIPPair.getIPAddress());
+            System.out.println(dataIPPair.getPort());
+
+
+            if(dataIPPair.getIPAddress().trim().equals(peerServerIP.trim())  && dataIPPair.getPort().trim().equals(peerServerPort.trim())){
                 uploaderDataSocket = dataIPPair.getSocket();
+
+                if (uploaderDataSocket == null) {
+                    System.out.println("NULL");
+                } else {
+                    System.out.println("YES");
+                }
             }
+
         }
         for(int i=0; i< signalIPToSocketMapping.size(); i++ ) {
             SignalIPSocketPair signalIPPair =  signalIPToSocketMapping.get(i);
