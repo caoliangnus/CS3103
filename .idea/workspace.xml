@@ -2,24 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="8557bd39-64e5-4290-8e85-9f2173f0d654" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CS3103.iml" beforeDir="false" afterPath="$PROJECT_DIR$/CS3103.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Stun/MessageAttribute.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Stun/MessageAttributeException.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Stun/MessageAttributeInterface.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Stun/MessageAttributeParsingException.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Stun/MessageHeader.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Stun/MessageHeaderException.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Stun/MessageHeaderInterface.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Stun/MessageHeaderParsingException.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Stun/util/Address.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Stun/util/Utility.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Stun/util/UtilityException.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/directoryServer/DirectoryServerMain.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/directoryServer/Entry.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/directoryServer/FilePair.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/directoryServer/Server.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/directoryServer/Worker.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/P2PClient/P2PClientUser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/P2PClient/P2PClientUser.java" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <ignored path="$PROJECT_DIR$/CS3103Mave/target/" />
@@ -34,7 +19,7 @@
     <session id="1787788554">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="36" />
+          <entry key="project.closed" value="37" />
           <entry key="project.open.time.0" value="11" />
           <entry key="project.open.time.1" value="10" />
           <entry key="project.open.time.14" value="1" />
@@ -51,8 +36,8 @@
           <entry key="directoryServer" value="1" />
           <entry key="env" value="1" />
           <entry key="iml" value="1" />
-          <entry key="java" value="168" />
-          <entry key="md" value="2" />
+          <entry key="java" value="171" />
+          <entry key="md" value="3" />
           <entry key="txt" value="10" />
           <entry key="worker" value="2" />
           <entry key="xml" value="5" />
@@ -63,8 +48,8 @@
         <counts>
           <entry key="CLASS" value="1" />
           <entry key="IDEA_MODULE" value="1" />
-          <entry key="JAVA" value="168" />
-          <entry key="Markdown" value="2" />
+          <entry key="JAVA" value="171" />
+          <entry key="Markdown" value="3" />
           <entry key="PLAIN_TEXT" value="15" />
           <entry key="XML" value="5" />
           <entry key="YAML" value="2" />
@@ -73,7 +58,7 @@
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="JAVA" value="9228" />
-          <entry key="Markdown" value="209" />
+          <entry key="Markdown" value="213" />
           <entry key="PLAIN_TEXT" value="9" />
           <entry key="XML" value="171" />
         </counts>
@@ -85,7 +70,7 @@
         <counts>
           <entry key="dummy" value="4" />
           <entry key="java" value="9228" />
-          <entry key="md" value="209" />
+          <entry key="md" value="213" />
           <entry key="txt" value="5" />
           <entry key="xml" value="171" />
         </counts>
@@ -95,20 +80,59 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/pom.xml">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="630">
+            <state relative-caret-position="626">
               <caret line="42" column="66" lean-forward="true" selection-start-line="42" selection-start-column="66" selection-end-line="42" selection-end-column="66" />
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/main/java/directoryServer/DirectoryServerMain.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="430">
-              <caret line="40" column="28" lean-forward="true" selection-start-line="40" selection-start-column="28" selection-end-line="40" selection-end-column="28" />
+            <state relative-caret-position="60">
+              <caret line="4" column="23" lean-forward="true" selection-start-line="4" selection-start-column="23" selection-end-line="4" selection-end-column="23" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/directoryServer/Worker.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1935">
+              <caret line="129" column="47" selection-start-line="129" selection-start-column="47" selection-end-line="129" selection-end-column="47" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/P2PClient/P2PClientMain.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="165">
+              <caret line="11" column="32" selection-start-line="11" selection-start-column="32" selection-end-line="11" selection-end-column="32" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/P2PClient/P2PClientUser.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="223">
+              <caret line="50" column="13" lean-forward="true" selection-start-line="50" selection-start-column="13" selection-end-line="50" selection-end-column="13" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/README.md">
+          <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+            <state split_layout="SPLIT">
+              <first_editor relative-caret-position="375">
+                <caret line="25" lean-forward="true" selection-start-line="25" selection-end-line="25" />
+              </first_editor>
+              <second_editor />
             </state>
           </provider>
         </entry>
@@ -126,7 +150,7 @@
         <entry file="file://$PROJECT_DIR$/Procfile">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="15">
-              <caret line="1" selection-start-line="1" selection-end-line="1" />
+              <caret line="1" column="21" selection-start-line="1" selection-start-column="21" selection-end-line="1" selection-end-column="21" />
             </state>
           </provider>
         </entry>
@@ -222,12 +246,14 @@
         <option value="$PROJECT_DIR$/src/Stun/util/Address.java" />
         <option value="$PROJECT_DIR$/src/Stun/MessageAttribute.java" />
         <option value="$PROJECT_DIR$/src/P2PClient/P2PClientUser.java" />
-        <option value="$PROJECT_DIR$/README.md" />
         <option value="$PROJECT_DIR$/CS3103Mave/pom.xml" />
         <option value="$PROJECT_DIR$/src/main/java/directoryServer/Server.java" />
         <option value="$PROJECT_DIR$/src/main/java/Server.java" />
         <option value="$PROJECT_DIR$/pom.xml" />
         <option value="$PROJECT_DIR$/src/main/java/directoryServer/DirectoryServerMain.java" />
+        <option value="$PROJECT_DIR$/Procfile" />
+        <option value="$PROJECT_DIR$/src/main/java/P2PClient/P2PClientUser.java" />
+        <option value="$PROJECT_DIR$/README.md" />
       </list>
     </option>
   </component>
@@ -296,25 +322,6 @@
               <item name="java" type="462c0819:PsiDirectoryNode" />
               <item name="P2PClient" type="462c0819:PsiDirectoryNode" />
             </path>
-            <path>
-              <item name="CS3103" type="b2602c69:ProjectViewProjectNode" />
-              <item name="CS3103" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="Stun" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="CS3103" type="b2602c69:ProjectViewProjectNode" />
-              <item name="CS3103" type="462c0819:PsiDirectoryNode" />
-              <item name="target" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="CS3103" type="b2602c69:ProjectViewProjectNode" />
-              <item name="CS3103" type="462c0819:PsiDirectoryNode" />
-              <item name="target" type="462c0819:PsiDirectoryNode" />
-              <item name="classes" type="462c0819:PsiDirectoryNode" />
-            </path>
           </expand>
           <select />
         </subPane>
@@ -329,7 +336,7 @@
     <property name="Repository.Attach.Sources" value="false" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1541124784956" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1541146987788" />
     <property name="project.structure.last.edited" value="Modules" />
     <property name="project.structure.proportion" value="0.15" />
     <property name="project.structure.side.proportion" value="0.2" />
@@ -363,7 +370,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Maven.Heroku">
+  <component name="RunManager" selected="Application.P2PClientMain">
     <configuration name="ChatClient" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="P2PClient.ChatClient" />
       <module name="CS3103" />
@@ -528,12 +535,12 @@
       <workItem from="1541045161211" duration="5088000" />
       <workItem from="1541064590040" duration="2842000" />
       <workItem from="1541086448873" duration="572000" />
-      <workItem from="1541122287182" duration="2557000" />
+      <workItem from="1541122287182" duration="7422000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="139662000" />
+    <option name="totallyTimeSpent" value="144527000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -547,7 +554,7 @@
   <component name="ToolWindowManager">
     <frame x="0" y="23" width="1440" height="877" extended-state="0" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.50187266" visible="true" weight="0.28183118" />
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.50187266" visible="true" weight="0.28183118" />
       <window_info id="Structure" order="1" sideWeight="0.49812734" side_tool="true" weight="0.2639485" />
       <window_info id="Designer" order="2" />
       <window_info id="Image Layers" order="3" />
@@ -736,16 +743,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/README.md">
-      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
-        <state split_layout="SPLIT">
-          <first_editor>
-            <caret column="27" selection-start-column="27" selection-end-column="27" />
-          </first_editor>
-          <second_editor />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/Stun/MappedAddress.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="210">
@@ -761,20 +758,6 @@
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/CS3103Mave/pom.xml" />
-    <entry file="file://$PROJECT_DIR$/src/main/java/P2PClient/P2PClientMain.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="165">
-          <caret line="11" column="32" selection-start-line="11" selection-start-column="32" selection-end-line="11" selection-end-column="32" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/directoryServer/Worker.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-671">
-          <caret line="129" column="47" selection-start-line="129" selection-start-column="47" selection-end-line="129" selection-end-column="47" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/CS3103.iml">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
@@ -817,13 +800,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/P2PClient/P2PClientUser.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="145">
-          <caret line="306" column="17" selection-start-line="306" selection-start-column="17" selection-end-line="306" selection-end-column="17" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/directoryServer/Server.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="30">
@@ -831,24 +807,55 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/directoryServer/DirectoryServerMain.java">
+    <entry file="file://$PROJECT_DIR$/pom.xml">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="430">
-          <caret line="40" column="28" lean-forward="true" selection-start-line="40" selection-start-column="28" selection-end-line="40" selection-end-column="28" />
+        <state relative-caret-position="626">
+          <caret line="42" column="66" lean-forward="true" selection-start-line="42" selection-start-column="66" selection-end-line="42" selection-end-column="66" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Procfile">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="15">
-          <caret line="1" selection-start-line="1" selection-end-line="1" />
+          <caret line="1" column="21" selection-start-line="1" selection-start-column="21" selection-end-line="1" selection-end-column="21" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/pom.xml">
+    <entry file="file://$PROJECT_DIR$/src/main/java/directoryServer/Worker.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="630">
-          <caret line="42" column="66" lean-forward="true" selection-start-line="42" selection-start-column="66" selection-end-line="42" selection-end-column="66" />
+        <state relative-caret-position="1935">
+          <caret line="129" column="47" selection-start-line="129" selection-start-column="47" selection-end-line="129" selection-end-column="47" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/P2PClient/P2PClientMain.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="165">
+          <caret line="11" column="32" selection-start-line="11" selection-start-column="32" selection-end-line="11" selection-end-column="32" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/P2PClient/P2PClientUser.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="223">
+          <caret line="50" column="13" lean-forward="true" selection-start-line="50" selection-start-column="13" selection-end-line="50" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="375">
+            <caret line="25" lean-forward="true" selection-start-line="25" selection-end-line="25" />
+          </first_editor>
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/directoryServer/DirectoryServerMain.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="60">
+          <caret line="4" column="23" lean-forward="true" selection-start-line="4" selection-start-column="23" selection-end-line="4" selection-end-column="23" />
         </state>
       </provider>
     </entry>
