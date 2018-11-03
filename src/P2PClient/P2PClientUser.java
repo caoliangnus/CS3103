@@ -1,20 +1,13 @@
 package P2PClient;
 
 import java.io.*;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicIntegerArray;
-import Stun.*;
-import Stun.util.UtilityException;
 
 public class P2PClientUser extends Thread {
 
@@ -24,20 +17,15 @@ public class P2PClientUser extends Thread {
     public static final String QUERY_COMMAND = "FIND";
     public static final String EXIT_COMMAND = "EXIT";
     public static final String INFORM_COMMAND = "INFORM";
+    public static final String RETRIEVE_COMMAND = "RETRIEVE";
     public static final String DOWNLOAD_COMMAND = "DOWNLOAD";
     public static final String GET_COMMAND = "GET";
-    public static final String SET_COMMAND = "SET";
-    public static String externalIPAddress = "";
-    public static String externalPort = "";
 
     public static Semaphore mapMutex = new Semaphore(1);
-    public static Semaphore addrAndPortMutex = new Semaphore(1);
 
     public static final int NUMBER_OF_THREADS_FOR_DOWNLOAD = 10;
 
-
     private static final String CHUNK_NOT_PRESENT_MESSAGE = "409 There is no such chunk.";
-    private static final String HOST_NAME_ALREADY_USED_MESSAGE = "413 This host name has already been used. Please choose another host name.";
     private static final String INVALID_USER_INPUT = "Invalid User Input. Please enter one number only.\n";
     private static final String INVALID_USER_INPUT_NUMBER = "Please enter number only.\n";
     private static final String INVALID_OPTION_NUMBER = "There is no such option number!\n";
@@ -47,30 +35,59 @@ public class P2PClientUser extends Thread {
 
     public static final int CHUNK_SIZE = 1024; //following MTU byte size of 1500, to play safe make it slightly lesser
 
-    private Socket clientRequestSocket;
-    private PrintWriter toServer;
-    private Scanner fromServer;
+    public static Socket clientControlSocket;
+    public static Socket clientDataSocket;
+    public static Socket clientSignalSocket;
+    public static PrintWriter dateToServer;
+    public static BufferedOutputStream dataToTracker;
+    public static Scanner dataFromServer;
+    public static BufferedInputStream dataFromTracker;
+
+    public static PrintWriter signalToServer;
+    public static Scanner signalFromServer;
+    public static PrintWriter toServer;
+    public static Scanner fromServer;
     private static Scanner input = new Scanner(System.in);
     public static String folderDirectory = "";
-    public static String hostName = "";
 
     private void handleUser() {
         try {
-//            clientRequestSocket = new Socket(InetAddress.getLocalHost(), SERVER_PORT);
+//            clientControlSocket = new Socket(InetAddress.getLocalHost(), SERVER_PORT);
 
-            clientRequestSocket = new Socket("172.25.97.81", SERVER_PORT);
+            //Signaling Connection Socket
+            clientSignalSocket = new Socket("172.25.96.247", SERVER_PORT);
+            signalToServer = new PrintWriter(clientSignalSocket.getOutputStream(), true);
+            signalFromServer = new Scanner(clientSignalSocket.getInputStream());
+
+            signalToServer.println("SIGNAL");
+
+            P2PClientUserSignalWorker signalWorker = new P2PClientUserSignalWorker(clientSignalSocket);
+            signalWorker.start();
+
+
+            //Data Connection Socket
+            clientDataSocket = new Socket("172.25.96.247", SERVER_PORT);
+            dateToServer = new PrintWriter(clientDataSocket.getOutputStream(), true);
+            dataFromServer = new Scanner(clientDataSocket.getInputStream());
+            dataToTracker = new BufferedOutputStream(clientDataSocket.getOutputStream());
+
+            dateToServer.println("DATA");
+
+            //Control Connection Socket
+            clientControlSocket = new Socket("172.25.96.247", SERVER_PORT);
             // Use toServer to send the request.
-            toServer = new PrintWriter(clientRequestSocket.getOutputStream(), true);
-            fromServer = new Scanner(clientRequestSocket.getInputStream());
+            toServer = new PrintWriter(clientControlSocket.getOutputStream(), true);
+            fromServer = new Scanner(clientControlSocket.getInputStream());
+
+            toServer.println("CONTROL");
 
             changeFileDirectory();
-            getHostName();
 
             while(true) {
                 int option;
                 displayMenu();
 
-                System.out.println("Please enter your option (1-7): ");
+                System.out.println("Please enter your option (1-6): ");
                 // Might want to catch error and warn user to input correctly before looping back.
 
                 String userInput = "";
@@ -148,30 +165,6 @@ public class P2PClientUser extends Thread {
             if (!advertisingFolder.exists() || !advertisingFolder.isDirectory()) {
                 firstTime = false;
             } else {
-                return;
-            }
-        }
-    }
-
-    private void getHostName() {
-        boolean firstTime = true;
-        while(true) {
-            if (firstTime) {
-                System.out.println("Please specify your user name for this session: ");
-            } else {
-                System.out.println("User name has been used. Please give another one: ");
-            }
-
-            String tempHostName = input.nextLine().trim();
-            String request = SET_COMMAND + " "  + tempHostName;
-            toServer.write(request);
-            toServer.flush();
-
-            String replyFromServer = fromServer.nextLine().trim();
-            if (replyFromServer.equals(HOST_NAME_ALREADY_USED_MESSAGE)) {
-                firstTime = false;
-            } else {
-                hostName = tempHostName;
                 return;
             }
         }
@@ -317,51 +310,65 @@ public class P2PClientUser extends Thread {
 
         int numberOfChunks = Integer.parseInt(reply);
         P2PFile fileToDownload = new P2PFile(filename, numberOfChunks);
-        int status;
-        int[] tempMap = new int[numberOfChunks];
-        Arrays.fill(tempMap, -1);
+        //AtomicIntegerArray map = new AtomicIntegerArray(tempMap);
 
-        ExecutorService threadPool = Executors.newFixedThreadPool(10);
+//        ExecutorService threadPool = Executors.newFixedThreadPool(10);
         String IPReply = "";
 
         while(!fileToDownload.hasCompleted()) {
             // Check for any chunks that is available for downloading
             for (int i = 0; i < numberOfChunks; i++) {
-                //status = map.getAndSet(i,0);
-                try {
-                    mapMutex.acquire();
-                }catch(Exception e){
-                    e.printStackTrace();
-                    System.out.println(e);
-                    System.exit(1);
-                }
-                status = tempMap[i];
-                if (status == -1) {
-                    tempMap[i] = 0;
-                    mapMutex.release();
-                    // Obtain a list of IP address to download from
-                    String IPRequest = DOWNLOAD_COMMAND + " " + filename + " " + (i + 1) + "\n";
-                    toServer.write(IPRequest);
-                    toServer.flush();
+                // Obtain a list of IP address to download from
+                String IPRequest = RETRIEVE_COMMAND + " " + filename + " " + (i + 1) + "\n";
+                toServer.write(IPRequest);
+                toServer.flush();
 
-                    while (true) {
-                        if (fromServer.hasNextLine()) {
-                            IPReply = fromServer.nextLine();
-                            break;
-                        }
+                while (true) {
+                    if (fromServer.hasNextLine()) {
+                        IPReply = fromServer.nextLine();
+                        break;
                     }
-                    String[] splitAddressAndPort = IPReply.split(",");
-
-                    threadPool.execute(new P2PClientUserWorker(i, fileToDownload, splitAddressAndPort, tempMap));
-                }else{
-                    mapMutex.release();
                 }
+                String[] splitAddress = IPReply.split(",");
+                downloadChunks(splitAddress, fileToDownload, i+1);
             }
         }
 
-        threadPool.shutdown();
+//        threadPool.shutdown();
         fileToDownload.writeToFile();
         
+
+    }
+
+
+    private void downloadChunks(String[] addresses, P2PFile fileToDownload, int chunkToDownload) {
+
+        for (int i = 0; i < addresses.length; i++) {
+            try {
+
+                // Buffer to store byte data from transient server to write into file
+                byte[] buffer = new byte[CHUNK_SIZE];
+
+                String clientRequest = GET_COMMAND + " " + fileToDownload.getFileName() + " " + chunkToDownload + "\n";
+
+                toServer.write(clientRequest);
+                toServer.flush();
+
+                int size = dataFromTracker.read(buffer, 0, CHUNK_SIZE);
+//                    System.out.println("Chunk: " + chunkToDownload + " SIZE " + size);
+
+                fileToDownload.setChunk(chunkToDownload-1, buffer);
+
+                System.out.println("Downloading from: " + addresses[i] + " Chunk No." + chunkToDownload);
+
+                return;
+
+            } catch (Exception e) {
+                // for now, we just continue to the next IP to download the chunk
+                continue;
+            }
+        }
+
 
     }
 
@@ -370,7 +377,7 @@ public class P2PClientUser extends Thread {
         try {
 
             //get the local IP address
-            //String localAddress = InetAddress.getLocalHost().getHostAddress();
+            String localAddress = InetAddress.getLocalHost().getHostAddress();
 
             File advertisingFolder = new File(folderDirectory);
             //check whether if the directory indicated is indeed a directory and exits
@@ -401,13 +408,7 @@ public class P2PClientUser extends Thread {
             int fileSize = (int) advertisingFile.length();
             int numOfChunks = calculateChunkSize(fileSize);
 
-            addrAndPortMutex.acquire();
-            String externalIPCopy = new String(externalIPAddress);
-            String externalPortCopy = new String(externalPort);
-            addrAndPortMutex.release();
-
-            String request = INFORM_COMMAND + " " + externalIPCopy + " " + externalPortCopy + " " + fileName
-                    + " " + numOfChunks + " " + hostName;
+            String request = INFORM_COMMAND + " " + localAddress + " " + fileName + " " + numOfChunks;
             // System.out.println(request);
             toServer.println(request);
             toServer.flush();
@@ -495,47 +496,7 @@ public class P2PClientUser extends Thread {
         }
     }
 
-    public void stun() throws IOException, MessageAttributeParsingException, UtilityException {
-        MessageHeader sendMH = new MessageHeader(MessageHeader.MessageHeaderType.BindingRequest);
-        ChangeRequest changeRequest = new ChangeRequest();
-        sendMH.addMessageAttribute(changeRequest);
-
-
-        byte[] data = sendMH.getBytes();
-        DatagramSocket s = null;
-        s = new DatagramSocket(5000);
-        /*InetSocketAddress address = new InetSocketAddress(InetAddress.getLocalHost(), 5000);
-        s.bind(address);*/
-        s.setReuseAddress(true);
-
-        DatagramPacket p = new DatagramPacket(data, data.length, InetAddress.getByName("stun.l.google.com"), 19302);
-        s.send(p);
-
-        DatagramPacket rp;
-
-        rp = new DatagramPacket(new byte[32], 32);
-
-        s.receive(rp);
-
-        MessageHeader receiveMH = new MessageHeader(MessageHeader.MessageHeaderType.BindingResponse);
-        receiveMH.parseAttributes(rp.getData());
-        MappedAddress ma = (MappedAddress) receiveMH
-                .getMessageAttribute(MessageAttribute.MessageAttributeType.MappedAddress);
-        System.out.println(ma.getAddress()+" "+ma.getPort());
-
-
-    }
-
     public void run() {
-        try {
-            stun();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (MessageAttributeParsingException e) {
-            e.printStackTrace();
-        } catch (UtilityException e) {
-            e.printStackTrace();
-        }
-        //handleUser();
+        handleUser();
     }
 }
