@@ -87,7 +87,7 @@ public class Worker implements Runnable {
                         searchForFile(splitRequest[1]);
                         break;
                     case INFORM_COMMAND:
-                        updateDirectory(splitRequest[1], splitRequest[2], splitRequest[3]);
+                        updateDirectory(splitRequest[1], splitRequest[2]);
                         break;
                     case RETURN_SERVER_IP_COMMAND:
                         returnIPAddressesAndPortForFile(splitRequest[1], splitRequest[2]);
@@ -280,9 +280,13 @@ public class Worker implements Runnable {
         fileNameListMutex.release();
     }
 
-    private synchronized void updateDirectory (String ip, String fileName, String chunkNum){
+    private synchronized void updateDirectory (String fileName, String chunkNum){
 
         boolean fileExisted = true;
+
+        String IPMixed = connectionSocket.getRemoteSocketAddress().toString();
+        String[] IPSplit = IPMixed.split(":");
+        String ip = IPSplit[0].replace("/", "");
 
         //Check if the ip address given is of a valid format
         if(!validIP(ip)){
