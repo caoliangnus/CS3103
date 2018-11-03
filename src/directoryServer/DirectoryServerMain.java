@@ -39,7 +39,7 @@ public class DirectoryServerMain {
 
         while(true) {
             try {
-                System.out.println("Waiting ");
+                System.out.println("Server is waiting... ");
                 connectionSocket = serverSocket.accept();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -61,7 +61,6 @@ public class DirectoryServerMain {
             String IP = connectionSocket.getRemoteSocketAddress().toString();
             String reply = fromServer.nextLine();
 
-            System.out.println("REPLy is: " + reply);
 
             if(reply.equals(DATA_SOCKET_IDENTIFIER)) {
                 System.out.println("Data Socket.");

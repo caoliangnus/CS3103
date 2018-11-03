@@ -17,9 +17,8 @@ public class P2PClientUser extends Thread {
     public static final String QUERY_COMMAND = "FIND";
     public static final String EXIT_COMMAND = "EXIT";
     public static final String INFORM_COMMAND = "INFORM";
-    public static final String RETRIEVE_COMMAND = "RETRIEVE";
-    public static final String DOWNLOAD_COMMAND = "DOWNLOAD";
-    public static final String GET_COMMAND = "GET";
+    public static final String RETURN_SERVER_IP_COMMAND = "RETRIEVE";
+    public static final String DOWNLOAD_COMMAND = "GET";
 
     public static Semaphore mapMutex = new Semaphore(1);
 
@@ -319,7 +318,7 @@ public class P2PClientUser extends Thread {
             // Check for any chunks that is available for downloading
             for (int i = 0; i < numberOfChunks; i++) {
                 // Obtain a list of IP address to download from
-                String IPRequest = RETRIEVE_COMMAND + " " + filename + " " + (i + 1) + "\n";
+                String IPRequest = RETURN_SERVER_IP_COMMAND + " " + filename + " " + (i + 1) + "\n";
                 toServer.write(IPRequest);
                 toServer.flush();
 
@@ -349,7 +348,7 @@ public class P2PClientUser extends Thread {
                 // Buffer to store byte data from transient server to write into file
                 byte[] buffer = new byte[CHUNK_SIZE];
 
-                String clientRequest = GET_COMMAND + " " + fileToDownload.getFileName() + " " + chunkToDownload + "\n";
+                String clientRequest = DOWNLOAD_COMMAND + " " + addresses[i] + " " + fileToDownload.getFileName() + " " + chunkToDownload + "\n";
 
                 toServer.write(clientRequest);
                 toServer.flush();
