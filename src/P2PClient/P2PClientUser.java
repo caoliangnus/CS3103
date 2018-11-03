@@ -4,12 +4,10 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicIntegerArray;
 
 public class P2PClientUser extends Thread {
 
@@ -36,20 +34,49 @@ public class P2PClientUser extends Thread {
 
     public static final int CHUNK_SIZE = 1024; //following MTU byte size of 1500, to play safe make it slightly lesser
 
-    private Socket clientRequestSocket;
-    private PrintWriter toServer;
-    private Scanner fromServer;
+    public static Socket clientControlSocket;
+    public static Socket clientDataSocket;
+    public static Socket clientSignalSocket;
+    public static PrintWriter dateToServer;
+    public static BufferedOutputStream dataToTracker;
+    public static Scanner dataFromServer;
+    public static PrintWriter signalToServer;
+    public static Scanner signalFromServer;
+    public static PrintWriter toServer;
+    public static Scanner fromServer;
     private static Scanner input = new Scanner(System.in);
     public static String folderDirectory = "";
 
     private void handleUser() {
         try {
-//            clientRequestSocket = new Socket(InetAddress.getLocalHost(), SERVER_PORT);
+//            clientControlSocket = new Socket(InetAddress.getLocalHost(), SERVER_PORT);
 
-            clientRequestSocket = new Socket("172.25.97.81", SERVER_PORT);
+            //Signaling Connection Socket
+            clientSignalSocket = new Socket("172.25.96.247", SERVER_PORT);
+            signalToServer = new PrintWriter(clientSignalSocket.getOutputStream(), true);
+            signalFromServer = new Scanner(clientSignalSocket.getInputStream());
+
+            signalToServer.println("SIGNAL");
+
+            P2PClientUserSignalWorker signalWorker = new P2PClientUserSignalWorker(clientSignalSocket);
+            signalWorker.start();
+
+
+            //Data Connection Socket
+            clientDataSocket = new Socket("172.25.96.247", SERVER_PORT);
+            dateToServer = new PrintWriter(clientDataSocket.getOutputStream(), true);
+            dataFromServer = new Scanner(clientDataSocket.getInputStream());
+            dataToTracker = new BufferedOutputStream(clientDataSocket.getOutputStream());
+
+            dateToServer.println("DATA");
+
+            //Control Connection Socket
+            clientControlSocket = new Socket("172.25.96.247", SERVER_PORT);
             // Use toServer to send the request.
-            toServer = new PrintWriter(clientRequestSocket.getOutputStream(), true);
-            fromServer = new Scanner(clientRequestSocket.getInputStream());
+            toServer = new PrintWriter(clientControlSocket.getOutputStream(), true);
+            fromServer = new Scanner(clientControlSocket.getInputStream());
+
+            toServer.println("CONTROL");
 
             changeFileDirectory();
 
@@ -322,7 +349,7 @@ public class P2PClientUser extends Thread {
 
 //                    P2PClientUserWorker worker = new P2PClientUserWorker(i, fileToDownload, splitAddress, tempMap);
 //                    worker.start();
-                    threadPool.execute(new P2PClientUserWorker(i, fileToDownload, splitAddress, tempMap));
+                    threadPool.execute(new P2PClientUserWorker(i, fileToDownload, splitAddress, tempMap, clientDataSocket));
                 }else{
                     mapMutex.release();
                 }
