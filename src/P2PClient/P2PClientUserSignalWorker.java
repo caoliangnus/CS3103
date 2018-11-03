@@ -34,83 +34,86 @@ public class P2PClientUserSignalWorker extends Thread {
 
     private void handleSignal() {
 
-        String request;
-        //System.out.println("Inside processPeerFileDownloadRequest");
-        while(true) {
-            if (fromTracker.hasNextLine()) {
-                request = fromTracker.nextLine();
-                break;
+        while (true) {
+            String request;
+            //System.out.println("Inside processPeerFileDownloadRequest");
+            while(true) {
+                if (fromTracker.hasNextLine()) {
+                    request = fromTracker.nextLine();
+                    break;
+                }
             }
-        }
 
-        String[] splitRequest = request.split("\\s+");
-        if (!splitRequest[0].equals(GET_COMMAND) || splitRequest.length != 3) {
-            toPeerSimplified.write(INVALID_COMMAND);
-            toPeerSimplified.flush();
-            System.out.println("Command invalid.");
-            return;
-        }
-
-        if (Integer.parseInt(splitRequest[2]) < 1) {
-            toPeerSimplified.write(INVALID_CHUNK_NUMBER_MESSAGE);
-            toPeerSimplified.flush();
-            System.out.println("Invalid chunk.");
-            return;
-        }
-
-        String filename = splitRequest[1];
-        int requestChunk = Integer.parseInt(splitRequest[2]);
-        System.out.println("Requester IP: " + signalSocket.getRemoteSocketAddress() + ", File Name: " + filename + ", Chunk Requested: " + requestChunk);
-
-        byte[] buffer;
-        File requestedFile = new File(filename);
-        int noOfChunksOfFile = (int) (requestedFile.length() / CHUNK_SIZE) + 1;
-        BufferedInputStream bis = null;
-        try {
-            bis = new BufferedInputStream(new FileInputStream(filename));
-        } catch(Exception e) {
-            e.printStackTrace();
-            System.out.println(e);
-            System.exit(1);
-        }
-
-        if (requestChunk > noOfChunksOfFile) {
-            toPeerSimplified.write(INVALID_CHUNK_NUMBER_MESSAGE);
-            toPeerSimplified.flush();
-            System.out.println("Invalid chunk.");
-            return;
-        }
-
-        //System.out.println(requestChunk);
-        //System.out.println("Already here.");
-        try {
-            buffer = new byte[CHUNK_SIZE];
-            bis.skip((requestChunk-1)*CHUNK_SIZE);
-            int numberOfBytesRead = bis.read(buffer, 0, CHUNK_SIZE);
-            if (numberOfBytesRead < 1) {
-                // Need to do something and inform peer.
-            }else {
-                //Liang: Data Socket to send data
-                P2PClientUser.dataToTracker.write(buffer, 0, numberOfBytesRead);
-                P2PClientUser.dataToTracker.flush();
-                toPeerSimplified.write("Chunk " + requestChunk + " of file "
-                        + filename + " has been sent.");
+            String[] splitRequest = request.split("\\s+");
+            if (!splitRequest[0].equals(GET_COMMAND) || splitRequest.length != 3) {
+                toPeerSimplified.write(INVALID_COMMAND);
                 toPeerSimplified.flush();
+                System.out.println("Command invalid.");
                 return;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println(e);
-            System.exit(1);
-        } finally {
-            if(bis!=null){
-                try {
-                    bis.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
+
+            if (Integer.parseInt(splitRequest[2]) < 1) {
+                toPeerSimplified.write(INVALID_CHUNK_NUMBER_MESSAGE);
+                toPeerSimplified.flush();
+                System.out.println("Invalid chunk.");
+                return;
+            }
+
+            String filename = splitRequest[1];
+            int requestChunk = Integer.parseInt(splitRequest[2]);
+            System.out.println("Requester IP: " + signalSocket.getRemoteSocketAddress() + ", File Name: " + filename + ", Chunk Requested: " + requestChunk);
+
+            byte[] buffer;
+            File requestedFile = new File(filename);
+            int noOfChunksOfFile = (int) (requestedFile.length() / CHUNK_SIZE) + 1;
+            BufferedInputStream bis = null;
+            try {
+                bis = new BufferedInputStream(new FileInputStream(filename));
+            } catch(Exception e) {
+                e.printStackTrace();
+                System.out.println(e);
+                System.exit(1);
+            }
+
+            if (requestChunk > noOfChunksOfFile) {
+                toPeerSimplified.write(INVALID_CHUNK_NUMBER_MESSAGE);
+                toPeerSimplified.flush();
+                System.out.println("Invalid chunk.");
+                return;
+            }
+
+            //System.out.println(requestChunk);
+            //System.out.println("Already here.");
+            try {
+                buffer = new byte[CHUNK_SIZE];
+                bis.skip((requestChunk-1)*CHUNK_SIZE);
+                int numberOfBytesRead = bis.read(buffer, 0, CHUNK_SIZE);
+                if (numberOfBytesRead < 1) {
+                    // Need to do something and inform peer.
+                }else {
+                    //Liang: Data Socket to send data
+                    P2PClientUser.dataToTracker.write(buffer, 0, numberOfBytesRead);
+                    P2PClientUser.dataToTracker.flush();
+                    toPeerSimplified.write("Chunk " + requestChunk + " of file "
+                            + filename + " has been sent.");
+                    toPeerSimplified.flush();
+                    return;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println(e);
+                System.exit(1);
+            } finally {
+                if(bis!=null){
+                    try {
+                        bis.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
+
     }
 
     public void run() {

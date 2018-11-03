@@ -69,6 +69,7 @@ public class P2PClientUser extends Thread {
             dateToServer = new PrintWriter(clientDataSocket.getOutputStream(), true);
             dataFromServer = new Scanner(clientDataSocket.getInputStream());
             dataToTracker = new BufferedOutputStream(clientDataSocket.getOutputStream());
+            dataFromTracker = new BufferedInputStream(clientDataSocket.getInputStream());
 
             dateToServer.println("DATA\n");
 
@@ -314,41 +315,55 @@ public class P2PClientUser extends Thread {
 //        ExecutorService threadPool = Executors.newFixedThreadPool(10);
         String IPReply = "";
 
-        while(!fileToDownload.hasCompleted()) {
-            // Check for any chunks that is available for downloading
-            for (int i = 0; i < numberOfChunks; i++) {
-                // Obtain a list of IP address to download from
-                String IPRequest = RETURN_SERVER_IP_COMMAND + " " + filename + " " + (i + 1) + "\n";
-                toServer.write(IPRequest);
-                toServer.flush();
+        // Check for any chunks that is available for downloading
+        for (int i = 0; i < numberOfChunks; i++) {
+            // Obtain a list of IP address to download from
+            String IPRequest = RETURN_SERVER_IP_COMMAND + " " + filename + " " + (i + 1) + "\n";
+            toServer.write(IPRequest);
 
-                while (true) {
-                    if (fromServer.hasNextLine()) {
-                        IPReply = fromServer.nextLine();
-                        break;
-                    }
+            System.out.println("REQUEST: " + IPRequest);
+
+            toServer.flush();
+
+            while (true) {
+                if (fromServer.hasNextLine()) {
+                    IPReply = fromServer.nextLine();
+                    break;
                 }
-                String[] splitAddress = IPReply.split(",");
-                downloadChunks(splitAddress, fileToDownload, i+1);
             }
+
+            System.out.println("REPLY: " + IPReply);
+
+
+            String[] splitAddress = IPReply.split(",");
+
+
+            for (int j = 0; j < splitAddress.length; j++ ) {
+                System.out.println("IP: " + splitAddress[j]);
+            }
+
+            downloadChunks(splitAddress, fileToDownload, i+1);
+
+            System.out.println("Downloaded chunk: " + (i+1));
+
         }
 
-//        threadPool.shutdown();
         fileToDownload.writeToFile();
-        
 
     }
 
 
     private void downloadChunks(String[] addresses, P2PFile fileToDownload, int chunkToDownload) {
 
-        for (int i = 0; i < addresses.length; i++) {
+//        for (int i = 0; i < addresses.length; i++) {
             try {
 
                 // Buffer to store byte data from transient server to write into file
                 byte[] buffer = new byte[CHUNK_SIZE];
 
-                String clientRequest = DOWNLOAD_COMMAND + " " + addresses[i] + " " + fileToDownload.getFileName() + " " + chunkToDownload + "\n";
+                String clientRequest = DOWNLOAD_COMMAND + " " + addresses[0] + " " + fileToDownload.getFileName() + " " + chunkToDownload + "\n";
+
+                System.out.println(clientRequest);
 
                 toServer.write(clientRequest);
                 toServer.flush();
@@ -358,15 +373,15 @@ public class P2PClientUser extends Thread {
 
                 fileToDownload.setChunk(chunkToDownload-1, buffer);
 
-                System.out.println("Downloading from: " + addresses[i] + " Chunk No." + chunkToDownload);
+                System.out.println("Downloading from: " + addresses[0] + " Chunk No." + chunkToDownload);
 
-                return;
+//                return;
 
             } catch (Exception e) {
                 // for now, we just continue to the next IP to download the chunk
-                continue;
+//                continue;
             }
-        }
+//        }
 
 
     }

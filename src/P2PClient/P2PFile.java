@@ -2,13 +2,11 @@ package P2PClient;
 
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.Semaphore;
 
 
 public class P2PFile {
 
     public static int CHUNK_SIZE = 1024;
-    public static Semaphore treeMapMutex = new Semaphore(1);
     private BufferedOutputStream bos;
 
     // Open the file for writing first
@@ -38,37 +36,10 @@ public class P2PFile {
         return this.filename;
     }
 
-    public boolean hasCompleted() {
-        boolean result = true;
-        try {
-            treeMapMutex.acquire();
-            result = numberOfChunks == chunks.size();
-            treeMapMutex.release();
-        }catch(Exception e) {
-            e.printStackTrace();
-            System.out.println(e);
-            System.exit(1);
-        }
-        return result;
-    }
 
     public void setChunk(int chunkNumber, byte[] data) {
         // Do a check if the chunk exists first
-        try {
-            treeMapMutex.acquire();
-            if (chunks.containsKey(chunkNumber)) {
-                // Do something here
-                treeMapMutex.release();
-                return;
-            }
-
-            chunks.put(chunkNumber, data);
-            treeMapMutex.release();
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println(e);
-            System.exit(1);
-        }
+        chunks.put(chunkNumber, data);
     }
 
     public void flush() {

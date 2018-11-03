@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-public class DataWorker extends Thread{
+public class DataWorker extends Thread {
 
     public static final int CHUNK_SIZE = 1024;
     public static final String GET_COMMAND = "GET";
@@ -44,14 +44,22 @@ public class DataWorker extends Thread{
         SignaltoUploaderSocket.write(clientRequest);
         SignaltoUploaderSocket.flush();
 
+        System.out.println("REquest: " +  clientRequest);
+
+
         // Relay chunk to downloader
         int size = DatafromUploaderSocket.read(buffer, 0, CHUNK_SIZE);
+
+        System.out.println("BUFFER: " +  size);
+        String st = new String(buffer);
+        System.out.println(st);
+
         relayToDownloaderSocket.write(buffer, 0, size);
         relayToDownloaderSocket.flush();
 
     }
 
-    public void start() {
+    public void run() {
 
         try {
             relayChunk();

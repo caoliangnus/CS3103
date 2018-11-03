@@ -3,6 +3,7 @@ package directoryServer;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.util.*;
 import java.util.concurrent.Semaphore;
 
@@ -118,6 +119,8 @@ public class Worker implements Runnable {
     private synchronized void returnIPAddressesAndPortForFile(String filename, String chunkNum) {
         boolean doesChunkExist = false;
 
+        System.out.println("Name: " + filename + " Chunk #: " + chunkNum);
+
         // Check if chunkNum is a valid positive number than one or more
         if(Integer.parseInt(chunkNum)<1){
             toClient.write(INVALID_CHUNK_NUMBER_MESSAGE);
@@ -125,12 +128,6 @@ public class Worker implements Runnable {
             return;
         }
 
-        try {
-            entryListMutex.acquire();
-        } catch (InterruptedException e) {
-            entryListMutex.release();
-            e.printStackTrace();
-        }
         List<Entry> listOfEntries = new ArrayList(entryList.get(filename));
         entryListMutex.release();
         if (listOfEntries == null) {
@@ -151,6 +148,8 @@ public class Worker implements Runnable {
                 chunkList.add(listOfEntries.get(k).getAddress());
             }
         }
+
+        System.out.println("Before Shuffle");
 
         //randomize the list of IP addresses
         shuffleList(chunkList);
@@ -358,20 +357,32 @@ public class Worker implements Runnable {
 
     public void createDownloadThread(String peerServerIP,String fileName,String chunkNumber) {
         Socket uploaderDataSocket = null;
-        Socket downloaderDataSocket;
+        Socket downloaderDataSocket = null;
         Socket uploaderSignalSocket= null;
-        downloaderDataSocket = connectionSocket;
+
+        String IPMixed = connectionSocket.getRemoteSocketAddress().toString();
+        String[] IPSplit = IPMixed.split(":");
+        String IP = IPSplit[0].replace("/", "");
+
         DataWorker dataWorker;
         int requestChunk = Integer.parseInt(chunkNumber);
+
         for(int i=0; i< dataIPToSocketMapping.size(); i++ ) {
             DataIPSocketPair dataIPPair =  dataIPToSocketMapping.get(i);
-            if(dataIPPair.getIPAddress().equals(peerServerIP)){
+            if(dataIPPair.getIPAddress().trim().equals(IP.trim())){
+                downloaderDataSocket = dataIPPair.getSocket();
+            }
+        }
+
+        for(int i=0; i< dataIPToSocketMapping.size(); i++ ) {
+            DataIPSocketPair dataIPPair =  dataIPToSocketMapping.get(i);
+            if(dataIPPair.getIPAddress().trim().equals(peerServerIP.trim())){
                 uploaderDataSocket = dataIPPair.getSocket();
             }
         }
         for(int i=0; i< signalIPToSocketMapping.size(); i++ ) {
             SignalIPSocketPair signalIPPair =  signalIPToSocketMapping.get(i);
-            if(signalIPPair.getIPAddress().equals(peerServerIP)){
+            if(signalIPPair.getIPAddress().trim().equals(peerServerIP.trim())){
                 uploaderSignalSocket = signalIPPair.getSocket();
             }
         }
@@ -379,6 +390,7 @@ public class Worker implements Runnable {
         try {
             dataWorker = new DataWorker(uploaderDataSocket,downloaderDataSocket,uploaderSignalSocket, fileName, requestChunk);
             dataWorker.start();
+            System.out.println("Data worker Done");
         } catch (IOException e) {
             e.printStackTrace();
         }

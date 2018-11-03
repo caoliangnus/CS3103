@@ -39,8 +39,9 @@ public class DirectoryServerMain {
 
         while(true) {
             try {
-                System.out.println("Server is waiting... ");
                 connectionSocket = serverSocket.accept();
+                System.out.println("Waiting for request from " + connectionSocket.getRemoteSocketAddress());
+
             } catch (IOException e) {
                 e.printStackTrace();
                 System.out.println(e);
@@ -58,7 +59,9 @@ public class DirectoryServerMain {
                 e.printStackTrace();
             }
 
-            String IP = connectionSocket.getRemoteSocketAddress().toString();
+            String IPMixed = connectionSocket.getRemoteSocketAddress().toString();
+            String[] IPSplit = IPMixed.split(":");
+            String IP = IPSplit[0].replace("/", "");
             String reply = fromServer.nextLine();
 
 
