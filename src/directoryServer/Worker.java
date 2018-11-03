@@ -13,19 +13,16 @@ public class Worker implements Runnable {
     private static final String QUERY_COMMAND = "FIND";
     private static final String EXIT_COMMAND = "EXIT";
     private static final String INFORM_COMMAND = "INFORM";
-    private static final String INFORM_HOSTNAME_COMMAND = "INFORMHOST";
     private static final String RETURN_SERVER_IP_COMMAND= "RETRIEVE";
     private static final String DOWNLOAD_COMMAND = "GET";
     private static final String CHUNK_COMMAND = "CHUNK";
-    private static final String SET_COMMAND = "SET";
 
     // List of success code and message to return
     private static final String FILE_FOUND_MESSAGE = "201 There is such a file.\n";
     private static final String EXIT_SUCCESSFUL_MESSAGE = "202 Exit is successful. " +
             "Data about user has been completely removed from directory server.\n";
-    private static final String CHUNK_UPDATE_SUCCESSFUL_MESSAGE = "203 Advertisement is updated\n";
-    private static final String HOST_NAME_UPDATE_SUCCESSFUL_MESSAGE = "204 Host name is updated\n";
-    private static final String ADDRESS_AND_PORT_UPDATE_SUCCESSFUL_MESSAGE = "205 IP Address and Port are updated\n";
+    private static final String UPDATE_SUCCESSFUL_MESSAGE = "203 Advertisement is updated\n";
+
 
     // List of error code and message to return
     private static final String INVALID_COMMAND_MESSAGE = "404 There is no such command.\n";
@@ -35,11 +32,8 @@ public class Worker implements Runnable {
             "please choose a .txt file.\n";
     private static final String INVALID_CHUNK_NUMBER_MESSAGE = "408 Chunk number given is invalid, " +
             "please provide a positive chunk number that is more than 0.\n";
-    private static final String INVALID_PORT_NUMBER_MESSAGE = "411 Port number given is invalid, " +
-            "please provide a port number from 0 to 65535 (inclusive of both).\n";
     private static final String CHUNK_NOT_PRESENT_MESSAGE = "409 There is no such chunk.\n";
     private static final String FILE_LIST_EMPTY_MESSAGE = "410 List is empty.\nEOF\n";
-    private static final String HOST_NAME_ALREADY_USED_MESSAGE = "413 This host name has already been used. Please choose another host name.\n";
 
 
     private static final int MAX_IP_ADDRESS_RETURNED = 10;
@@ -51,7 +45,6 @@ public class Worker implements Runnable {
     private Semaphore entryListMutex = new Semaphore(1);
     private List<FilePair> fileNameList = DirectoryServerMain.fileNameList;
     private Hashtable<String, ArrayList<Entry>> entryList = DirectoryServerMain.entryList;
-    private List<String> hostNameList = DirectoryServerMain.hostNameList;
     private List<DataIPSocketPair> dataIPToSocketMapping = DirectoryServerMain.DataIPToSocketMapping ;
     private List<SignalIPSocketPair> signalIPToSocketMapping = DirectoryServerMain.SignalIPToSocketMapping;
 
@@ -93,10 +86,7 @@ public class Worker implements Runnable {
                         searchForFile(splitRequest[1]);
                         break;
                     case INFORM_COMMAND:
-                        updateDirectory(splitRequest[1], splitRequest[2], splitRequest[3], splitRequest[4], splitRequest[5]);
-                        break;
-                    case INFORM_HOSTNAME_COMMAND:
-                        updateHostName(splitRequest[1], splitRequest[2], splitRequest[3]);
+                        updateDirectory(splitRequest[1], splitRequest[2], splitRequest[3]);
                         break;
                     case RETURN_SERVER_IP_COMMAND:
                         returnIPAddressesAndPortForFile(splitRequest[1], splitRequest[2]);
@@ -106,9 +96,6 @@ public class Worker implements Runnable {
                         break;
                     case CHUNK_COMMAND:
                         returnTotalChunkNumber(splitRequest[1]);
-                        break;
-                    case SET_COMMAND:
-                        checkAndSetHostName(splitRequest[1]);
                         break;
                     case DOWNLOAD_COMMAND:
                         createDownloadThread(splitRequest[1],splitRequest[2],splitRequest[3]);
@@ -127,46 +114,6 @@ public class Worker implements Runnable {
         }
     }
 
-    private void checkAndSetHostName(String hostName) {
-        if (hostNameList.contains(hostName)) {
-            toClient.write(HOST_NAME_ALREADY_USED_MESSAGE);
-            toClient.flush();
-        }else{
-            hostNameList.add(hostName);
-            toClient.write(HOST_NAME_UPDATE_SUCCESSFUL_MESSAGE);
-            toClient.flush();
-        }
-    }
-
-    private void updateHostName(String hostName, String newAddr, String newPort) {
-        // Validate newPort first
-        try{
-            int tempPort = Integer.parseInt(newPort);
-            if (tempPort < 0 || tempPort > 65535) {
-                toClient.write(INVALID_PORT_NUMBER_MESSAGE);
-                toClient.flush();
-                return;
-            }
-        }catch(NumberFormatException nfe) {
-            toClient.write(INVALID_PORT_NUMBER_MESSAGE);
-            toClient.flush();
-            return;
-        }
-
-        entryList.forEach((filename, list) -> {
-            Iterator<Entry> iterator = list.iterator();
-            while(iterator.hasNext()){
-                Entry entry = iterator.next();
-                if(entry.getHostName().equals(hostName)){
-                    entry.setAddress(newAddr);
-                    entry.setPort(Integer.parseInt(newPort));
-                }
-            }
-        });
-
-        toClient.write(ADDRESS_AND_PORT_UPDATE_SUCCESSFUL_MESSAGE);
-        toClient.flush();
-    }
 
     private synchronized void returnIPAddressesAndPortForFile(String filename, String chunkNum) {
         boolean doesChunkExist = false;
@@ -198,11 +145,10 @@ public class Worker implements Runnable {
         int counter = 0;
 
         //extract list of ip addresses which have this chunk
-        List<IPAndPortPair> chunkList = new ArrayList<>();
+        List<String> chunkList = new ArrayList<>();
         for(int k=0;k<listOfEntries.size();k++){
-            Entry entry = listOfEntries.get(k);
-            if(entry.getChunkNumber() == chunkNumber){
-                chunkList.add(new IPAndPortPair(entry.getAddress(), String.valueOf(entry.getPort())));
+            if(listOfEntries.get(k).getChunkNumber() == chunkNumber) {
+                chunkList.add(listOfEntries.get(k).getAddress());
             }
         }
 
@@ -210,11 +156,9 @@ public class Worker implements Runnable {
         shuffleList(chunkList);
 
         //generate message with at most 10 ip addresses
-        for(IPAndPortPair ip : chunkList) {
-            IPAddressesAndPorts.append(ip.getIPAddress());
+        for(String ip : chunkList) {
+            IPAddressesAndPorts.append(ip);
             IPAddressesAndPorts.append(':');
-            IPAddressesAndPorts.append(ip.getPort());
-            IPAddressesAndPorts.append(',');
             counter++;
             doesChunkExist = true;
             if (counter == MAX_IP_ADDRESS_RETURNED) {
@@ -238,7 +182,7 @@ public class Worker implements Runnable {
         toClient.flush();
     }
 
-    private static void shuffleList(List<IPAndPortPair> entryList) {
+    private static void shuffleList(List<String> entryList) {
         int n = entryList.size();
         Random random = new Random(System.currentTimeMillis());
         random.nextInt();
@@ -248,13 +192,13 @@ public class Worker implements Runnable {
         }
     }
 
-    private static void swap(List<IPAndPortPair> entryList, int i, int randomIndex) {
-        IPAndPortPair tempEntry = entryList.get(i);
+    private static void swap(List<String> entryList, int i, int randomIndex) {
+        String tempEntry = entryList.get(i);
         entryList.set(i, entryList.get(randomIndex));
         entryList.set(randomIndex, tempEntry);
     }
 
-    private synchronized void initializeClientExit(String hostName) {
+    private synchronized void initializeClientExit(String IPAdress) {
         try {
             entryListMutex.acquire();
         } catch (InterruptedException e) {
@@ -266,7 +210,7 @@ public class Worker implements Runnable {
             Iterator<Entry> iterator = list.iterator();
             while(iterator.hasNext()){
                 Entry entry = iterator.next();
-                if(entry.getHostName().equals(hostName)){
+                if(entry.getAddress().equals(IPAdress)){
                     iterator.remove();
 
                     // I am not sure if we should do it this way
@@ -337,7 +281,7 @@ public class Worker implements Runnable {
         fileNameListMutex.release();
     }
 
-    private synchronized void updateDirectory (String ip, String port, String fileName, String chunkNum, String hostName){
+    private synchronized void updateDirectory (String ip, String fileName, String chunkNum){
 
         boolean fileExisted = true;
 
@@ -362,13 +306,7 @@ public class Worker implements Runnable {
             return;
         }
 
-        //Check if port is a valid positive number than is one or more
-        int portNumber = Integer.parseInt(port);
-        if(portNumber < 0 || portNumber > 65535){
-            toClient.write(INVALID_PORT_NUMBER_MESSAGE);
-            toClient.flush();
-            return;
-        }
+
 
         FilePair temp = new FilePair(fileName, Integer.parseInt(chunkNum));
         //Check if file already exists, if not update the fileNameList
@@ -389,7 +327,7 @@ public class Worker implements Runnable {
         if(!fileExisted){
             ArrayList<Entry> entries = new ArrayList<>();
             for(int i =0;i<Integer.parseInt(chunkNum);i++){
-                entries.add(new Entry(i+1, ip, portNumber, hostName));
+                entries.add(new Entry(i+1, ip));
             }
             try {
                 entryListMutex.acquire();
@@ -402,25 +340,18 @@ public class Worker implements Runnable {
         }else {
             //Check if this file was advertised by this host earlier, if yes then don't add duplicate entries
 
-            try {
-                entryListMutex.acquire();
-            } catch (InterruptedException e) {
-                entryListMutex.release();
-                e.printStackTrace();
-            }
-
             if(entryList.get(fileName).get(0).getAddress().equals(ip)){
                 System.out.println(fileName + " has been advertised earlier. ");
             }else {
                 for (int j = 0; j < Integer.parseInt(chunkNum); j++) {
-                    entryList.get(fileName).add(new Entry(j + 1, ip, portNumber, hostName));
+                    entryList.get(fileName).add(new Entry(j + 1, ip));
 
                 }
             }
 
             entryListMutex.release();
         }
-        toClient.write(CHUNK_UPDATE_SUCCESSFUL_MESSAGE);
+        toClient.write(UPDATE_SUCCESSFUL_MESSAGE);
         toClient.flush();
 
     }

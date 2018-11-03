@@ -55,31 +55,31 @@ public class P2PClientUser extends Thread {
 //            clientControlSocket = new Socket(InetAddress.getLocalHost(), SERVER_PORT);
 
             //Signaling Connection Socket
-            clientSignalSocket = new Socket("172.25.96.247", SERVER_PORT);
+            clientSignalSocket = new Socket("172.25.102.18", SERVER_PORT);
             signalToServer = new PrintWriter(clientSignalSocket.getOutputStream(), true);
             signalFromServer = new Scanner(clientSignalSocket.getInputStream());
 
-            signalToServer.println("SIGNAL");
+            signalToServer.println("SIGNAL\n");
 
             P2PClientUserSignalWorker signalWorker = new P2PClientUserSignalWorker(clientSignalSocket);
             signalWorker.start();
 
 
             //Data Connection Socket
-            clientDataSocket = new Socket("172.25.96.247", SERVER_PORT);
+            clientDataSocket = new Socket("172.25.102.18", SERVER_PORT);
             dateToServer = new PrintWriter(clientDataSocket.getOutputStream(), true);
             dataFromServer = new Scanner(clientDataSocket.getInputStream());
             dataToTracker = new BufferedOutputStream(clientDataSocket.getOutputStream());
 
-            dateToServer.println("DATA");
+            dateToServer.println("DATA\n");
 
             //Control Connection Socket
-            clientControlSocket = new Socket("172.25.96.247", SERVER_PORT);
+            clientControlSocket = new Socket("172.25.102.18", SERVER_PORT);
             // Use toServer to send the request.
             toServer = new PrintWriter(clientControlSocket.getOutputStream(), true);
             fromServer = new Scanner(clientControlSocket.getInputStream());
 
-            toServer.println("CONTROL");
+            toServer.println("CONTROL\n");
 
             changeFileDirectory();
 

@@ -20,7 +20,6 @@ public class DirectoryServerMain {
     public static final String SIGNAL_SOCKET_IDENTIFIER = "SIGNAL";
     public static final Hashtable<String, ArrayList<Entry>> entryList = new Hashtable<>();
     public static final List<FilePair> fileNameList = new ArrayList<>();
-    public static final List<String> hostNameList = new ArrayList<>();
     public static final List<DataIPSocketPair> DataIPToSocketMapping = new ArrayList<>();
     public static final List<SignalIPSocketPair> SignalIPToSocketMapping = new ArrayList<>();
 
@@ -40,6 +39,7 @@ public class DirectoryServerMain {
 
         while(true) {
             try {
+                System.out.println("Waiting ");
                 connectionSocket = serverSocket.accept();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -60,6 +60,9 @@ public class DirectoryServerMain {
 
             String IP = connectionSocket.getRemoteSocketAddress().toString();
             String reply = fromServer.nextLine();
+
+            System.out.println("REPLy is: " + reply);
+
             if(reply.equals(DATA_SOCKET_IDENTIFIER)) {
                 System.out.println("Data Socket.");
                 DataIPSocketPair dataMapping = new DataIPSocketPair(IP, connectionSocket);
