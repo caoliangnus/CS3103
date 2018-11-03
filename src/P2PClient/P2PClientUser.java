@@ -26,12 +26,18 @@ public class P2PClientUser extends Thread {
     public static final String INFORM_COMMAND = "INFORM";
     public static final String DOWNLOAD_COMMAND = "DOWNLOAD";
     public static final String GET_COMMAND = "GET";
+    public static final String SET_COMMAND = "SET";
+    public static String externalIPAddress = "";
+    public static String externalPort = "";
 
     public static Semaphore mapMutex = new Semaphore(1);
+    public static Semaphore addrAndPortMutex = new Semaphore(1);
 
     public static final int NUMBER_OF_THREADS_FOR_DOWNLOAD = 10;
 
+
     private static final String CHUNK_NOT_PRESENT_MESSAGE = "409 There is no such chunk.";
+    private static final String HOST_NAME_ALREADY_USED_MESSAGE = "413 This host name has already been used. Please choose another host name.";
     private static final String INVALID_USER_INPUT = "Invalid User Input. Please enter one number only.\n";
     private static final String INVALID_USER_INPUT_NUMBER = "Please enter number only.\n";
     private static final String INVALID_OPTION_NUMBER = "There is no such option number!\n";
@@ -46,6 +52,7 @@ public class P2PClientUser extends Thread {
     private Scanner fromServer;
     private static Scanner input = new Scanner(System.in);
     public static String folderDirectory = "";
+    public static String hostName = "";
 
     private void handleUser() {
         try {
@@ -57,12 +64,13 @@ public class P2PClientUser extends Thread {
             fromServer = new Scanner(clientRequestSocket.getInputStream());
 
             changeFileDirectory();
+            getHostName();
 
             while(true) {
                 int option;
                 displayMenu();
 
-                System.out.println("Please enter your option (1-6): ");
+                System.out.println("Please enter your option (1-7): ");
                 // Might want to catch error and warn user to input correctly before looping back.
 
                 String userInput = "";
@@ -140,6 +148,30 @@ public class P2PClientUser extends Thread {
             if (!advertisingFolder.exists() || !advertisingFolder.isDirectory()) {
                 firstTime = false;
             } else {
+                return;
+            }
+        }
+    }
+
+    private void getHostName() {
+        boolean firstTime = true;
+        while(true) {
+            if (firstTime) {
+                System.out.println("Please specify your user name for this session: ");
+            } else {
+                System.out.println("User name has been used. Please give another one: ");
+            }
+
+            String tempHostName = input.nextLine().trim();
+            String request = SET_COMMAND + " "  + tempHostName;
+            toServer.write(request);
+            toServer.flush();
+
+            String replyFromServer = fromServer.nextLine().trim();
+            if (replyFromServer.equals(HOST_NAME_ALREADY_USED_MESSAGE)) {
+                firstTime = false;
+            } else {
+                hostName = tempHostName;
                 return;
             }
         }
@@ -288,13 +320,11 @@ public class P2PClientUser extends Thread {
         int status;
         int[] tempMap = new int[numberOfChunks];
         Arrays.fill(tempMap, -1);
-        //AtomicIntegerArray map = new AtomicIntegerArray(tempMap);
 
         ExecutorService threadPool = Executors.newFixedThreadPool(10);
         String IPReply = "";
 
         while(!fileToDownload.hasCompleted()) {
-//        System.out.println("infinite?");
             // Check for any chunks that is available for downloading
             for (int i = 0; i < numberOfChunks; i++) {
                 //status = map.getAndSet(i,0);
@@ -311,23 +341,18 @@ public class P2PClientUser extends Thread {
                     mapMutex.release();
                     // Obtain a list of IP address to download from
                     String IPRequest = DOWNLOAD_COMMAND + " " + filename + " " + (i + 1) + "\n";
-//                    System.out.println("chunk: " + i);
                     toServer.write(IPRequest);
                     toServer.flush();
 
                     while (true) {
-                        //System.out.println("Here");
                         if (fromServer.hasNextLine()) {
                             IPReply = fromServer.nextLine();
                             break;
                         }
                     }
-//                    System.out.println(threadPool.isShutdown());
-                    String[] splitAddress = IPReply.split(",");
+                    String[] splitAddressAndPort = IPReply.split(",");
 
-//                    P2PClientUserWorker worker = new P2PClientUserWorker(i, fileToDownload, splitAddress, tempMap);
-//                    worker.start();
-                    threadPool.execute(new P2PClientUserWorker(i, fileToDownload, splitAddress, tempMap));
+                    threadPool.execute(new P2PClientUserWorker(i, fileToDownload, splitAddressAndPort, tempMap));
                 }else{
                     mapMutex.release();
                 }
@@ -345,7 +370,7 @@ public class P2PClientUser extends Thread {
         try {
 
             //get the local IP address
-            String localAddress = InetAddress.getLocalHost().getHostAddress();
+            //String localAddress = InetAddress.getLocalHost().getHostAddress();
 
             File advertisingFolder = new File(folderDirectory);
             //check whether if the directory indicated is indeed a directory and exits
@@ -376,7 +401,13 @@ public class P2PClientUser extends Thread {
             int fileSize = (int) advertisingFile.length();
             int numOfChunks = calculateChunkSize(fileSize);
 
-            String request = INFORM_COMMAND + " " + localAddress + " " + fileName + " " + numOfChunks;
+            addrAndPortMutex.acquire();
+            String externalIPCopy = new String(externalIPAddress);
+            String externalPortCopy = new String(externalPort);
+            addrAndPortMutex.release();
+
+            String request = INFORM_COMMAND + " " + externalIPCopy + " " + externalPortCopy + " " + fileName
+                    + " " + numOfChunks + " " + hostName;
             // System.out.println(request);
             toServer.println(request);
             toServer.flush();

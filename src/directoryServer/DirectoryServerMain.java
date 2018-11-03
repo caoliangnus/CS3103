@@ -15,6 +15,7 @@ public class DirectoryServerMain {
     public static final int NUMBER_OF_THREADS = 10;
     public static final Hashtable<String, ArrayList<Entry>> entryList = new Hashtable<>();
     public static final List<FilePair> fileNameList = new ArrayList<>();
+    public static final List<String> hostNameList = new ArrayList<>();
 
     private static ExecutorService threadPool;
 
