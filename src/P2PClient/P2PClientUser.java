@@ -17,6 +17,7 @@ public class P2PClientUser extends Thread {
     public static final String QUERY_COMMAND = "FIND";
     public static final String EXIT_COMMAND = "EXIT";
     public static final String INFORM_COMMAND = "INFORM";
+    public static final String RETRIEVE_COMMAND = "RETRIEVE";
     public static final String DOWNLOAD_COMMAND = "DOWNLOAD";
     public static final String GET_COMMAND = "GET";
 
@@ -40,6 +41,8 @@ public class P2PClientUser extends Thread {
     public static PrintWriter dateToServer;
     public static BufferedOutputStream dataToTracker;
     public static Scanner dataFromServer;
+    public static BufferedInputStream dataFromTracker;
+
     public static PrintWriter signalToServer;
     public static Scanner signalFromServer;
     public static PrintWriter toServer;
@@ -307,58 +310,65 @@ public class P2PClientUser extends Thread {
 
         int numberOfChunks = Integer.parseInt(reply);
         P2PFile fileToDownload = new P2PFile(filename, numberOfChunks);
-        int status;
-        int[] tempMap = new int[numberOfChunks];
-        Arrays.fill(tempMap, -1);
         //AtomicIntegerArray map = new AtomicIntegerArray(tempMap);
 
-        ExecutorService threadPool = Executors.newFixedThreadPool(10);
+//        ExecutorService threadPool = Executors.newFixedThreadPool(10);
         String IPReply = "";
 
         while(!fileToDownload.hasCompleted()) {
-//        System.out.println("infinite?");
             // Check for any chunks that is available for downloading
             for (int i = 0; i < numberOfChunks; i++) {
-                //status = map.getAndSet(i,0);
-                try {
-                    mapMutex.acquire();
-                }catch(Exception e){
-                    e.printStackTrace();
-                    System.out.println(e);
-                    System.exit(1);
-                }
-                status = tempMap[i];
-                if (status == -1) {
-                    tempMap[i] = 0;
-                    mapMutex.release();
-                    // Obtain a list of IP address to download from
-                    String IPRequest = DOWNLOAD_COMMAND + " " + filename + " " + (i + 1) + "\n";
-//                    System.out.println("chunk: " + i);
-                    toServer.write(IPRequest);
-                    toServer.flush();
+                // Obtain a list of IP address to download from
+                String IPRequest = RETRIEVE_COMMAND + " " + filename + " " + (i + 1) + "\n";
+                toServer.write(IPRequest);
+                toServer.flush();
 
-                    while (true) {
-                        //System.out.println("Here");
-                        if (fromServer.hasNextLine()) {
-                            IPReply = fromServer.nextLine();
-                            break;
-                        }
+                while (true) {
+                    if (fromServer.hasNextLine()) {
+                        IPReply = fromServer.nextLine();
+                        break;
                     }
-//                    System.out.println(threadPool.isShutdown());
-                    String[] splitAddress = IPReply.split(",");
-
-//                    P2PClientUserWorker worker = new P2PClientUserWorker(i, fileToDownload, splitAddress, tempMap);
-//                    worker.start();
-                    threadPool.execute(new P2PClientUserWorker(i, fileToDownload, splitAddress, tempMap, clientDataSocket));
-                }else{
-                    mapMutex.release();
                 }
+                String[] splitAddress = IPReply.split(",");
+                downloadChunks(splitAddress, fileToDownload, i+1);
             }
         }
 
-        threadPool.shutdown();
+//        threadPool.shutdown();
         fileToDownload.writeToFile();
         
+
+    }
+
+
+    private void downloadChunks(String[] addresses, P2PFile fileToDownload, int chunkToDownload) {
+
+        for (int i = 0; i < addresses.length; i++) {
+            try {
+
+                // Buffer to store byte data from transient server to write into file
+                byte[] buffer = new byte[CHUNK_SIZE];
+
+                String clientRequest = GET_COMMAND + " " + fileToDownload.getFileName() + " " + chunkToDownload + "\n";
+
+                toServer.write(clientRequest);
+                toServer.flush();
+
+                int size = dataFromTracker.read(buffer, 0, CHUNK_SIZE);
+//                    System.out.println("Chunk: " + chunkToDownload + " SIZE " + size);
+
+                fileToDownload.setChunk(chunkToDownload-1, buffer);
+
+                System.out.println("Downloading from: " + addresses[i] + " Chunk No." + chunkToDownload);
+
+                return;
+
+            } catch (Exception e) {
+                // for now, we just continue to the next IP to download the chunk
+                continue;
+            }
+        }
+
 
     }
 
