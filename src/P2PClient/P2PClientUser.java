@@ -337,11 +337,6 @@ public class P2PClientUser extends Thread {
 
             String[] splitAddress = IPReply.split(",");
 
-
-            for (int j = 0; j < splitAddress.length; j++ ) {
-                System.out.println("IP: " + splitAddress[j]);
-            }
-
             downloadChunks(splitAddress, fileToDownload, i+1);
 
             System.out.println("Downloaded chunk: " + (i+1));
@@ -355,7 +350,7 @@ public class P2PClientUser extends Thread {
 
     private void downloadChunks(String[] addresses, P2PFile fileToDownload, int chunkToDownload) {
 
-//        for (int i = 0; i < addresses.length; i++) {
+        for (int i = 0; i < addresses.length; i++) {
             try {
 
                 // Buffer to store byte data from transient server to write into file
@@ -379,9 +374,9 @@ public class P2PClientUser extends Thread {
 
             } catch (Exception e) {
                 // for now, we just continue to the next IP to download the chunk
-//                continue;
+                continue;
             }
-//        }
+        }
 
 
     }

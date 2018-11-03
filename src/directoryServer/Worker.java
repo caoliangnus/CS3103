@@ -145,18 +145,17 @@ public class Worker implements Runnable {
         List<String> chunkList = new ArrayList<>();
         for(int k=0;k<listOfEntries.size();k++){
             if(listOfEntries.get(k).getChunkNumber() == chunkNumber) {
-                chunkList.add(listOfEntries.get(k).getAddress());
+                chunkList.add(listOfEntries.get(k).getAddress() + ":" + listOfEntries.get(k).getPort());
             }
         }
 
-        System.out.println("Before Shuffle");
 
         //randomize the list of IP addresses
         shuffleList(chunkList);
 
         //generate message with at most 10 ip addresses
-        for(String ip : chunkList) {
-            IPAddressesAndPorts.append(ip);
+        for(String ipPort : chunkList) {
+            IPAddressesAndPorts.append(ipPort);
             IPAddressesAndPorts.append(',');
             counter++;
             doesChunkExist = true;
@@ -287,6 +286,7 @@ public class Worker implements Runnable {
         String IPMixed = connectionSocket.getRemoteSocketAddress().toString();
         String[] IPSplit = IPMixed.split(":");
         String ip = IPSplit[0].replace("/", "");
+        String port = IPSplit[1];
 
         //Check if the ip address given is of a valid format
         if(!validIP(ip)){
@@ -330,7 +330,7 @@ public class Worker implements Runnable {
         if(!fileExisted){
             ArrayList<Entry> entries = new ArrayList<>();
             for(int i =0;i<Integer.parseInt(chunkNum);i++){
-                entries.add(new Entry(i+1, ip));
+                entries.add(new Entry(i+1, ip, port));
             }
             try {
                 entryListMutex.acquire();
@@ -347,7 +347,7 @@ public class Worker implements Runnable {
                 System.out.println(fileName + " has been advertised earlier. ");
             }else {
                 for (int j = 0; j < Integer.parseInt(chunkNum); j++) {
-                    entryList.get(fileName).add(new Entry(j + 1, ip));
+                    entryList.get(fileName).add(new Entry(j + 1, ip, port));
 
                 }
             }
@@ -359,34 +359,41 @@ public class Worker implements Runnable {
 
     }
 
-    public void createDownloadThread(String peerServerIP,String fileName,String chunkNumber) {
+    public void createDownloadThread(String peerServerIPPort,String fileName,String chunkNumber) {
         Socket uploaderDataSocket = null;
         Socket downloaderDataSocket = null;
         Socket uploaderSignalSocket= null;
 
+        String[] peerServerIPPortArray = peerServerIPPort.split(":");
+        String peerServerIP = peerServerIPPortArray[0];
+        String peerServerPort = peerServerIPPortArray[1];
+
+
         String IPMixed = connectionSocket.getRemoteSocketAddress().toString();
         String[] IPSplit = IPMixed.split(":");
         String IP = IPSplit[0].replace("/", "");
+        String port = IPSplit[1];
 
         DataWorker dataWorker;
         int requestChunk = Integer.parseInt(chunkNumber);
 
         for(int i=0; i< dataIPToSocketMapping.size(); i++ ) {
             DataIPSocketPair dataIPPair =  dataIPToSocketMapping.get(i);
-            if(dataIPPair.getIPAddress().trim().equals(IP.trim())){
+
+            if(dataIPPair.getIPAddress().trim().equals(IP.trim()) && dataIPPair.getPort().equals(port)){
                 downloaderDataSocket = dataIPPair.getSocket();
             }
         }
 
         for(int i=0; i< dataIPToSocketMapping.size(); i++ ) {
             DataIPSocketPair dataIPPair =  dataIPToSocketMapping.get(i);
-            if(dataIPPair.getIPAddress().trim().equals(peerServerIP.trim())){
+            if(dataIPPair.getIPAddress().trim().equals(peerServerIP.trim())  && dataIPPair.getPort().equals(peerServerPort)){
                 uploaderDataSocket = dataIPPair.getSocket();
             }
         }
         for(int i=0; i< signalIPToSocketMapping.size(); i++ ) {
             SignalIPSocketPair signalIPPair =  signalIPToSocketMapping.get(i);
-            if(signalIPPair.getIPAddress().trim().equals(peerServerIP.trim())){
+            if(signalIPPair.getIPAddress().trim().equals(peerServerIP.trim())  && signalIPPair.getPort().equals(peerServerPort)){
                 uploaderSignalSocket = signalIPPair.getSocket();
             }
         }

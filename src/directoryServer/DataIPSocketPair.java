@@ -6,15 +6,21 @@ public class DataIPSocketPair {
 
     private String IPAddress;
     private Socket socket;
+    private String port;
 
-    public DataIPSocketPair(String IPAddress, Socket socket) {
+    public DataIPSocketPair(String IPAddress, Socket socket, String port) {
         this.IPAddress = IPAddress;
         this.socket = socket;
+        this.port = port;
     }
 
 
     public String getIPAddress() {
         return IPAddress;
+    }
+
+    public String getPort() {
+        return port;
     }
 
     public void setIPAddress(String IPAddress) {
@@ -28,4 +34,17 @@ public class DataIPSocketPair {
     public void setSocket(Socket socket) {
         this.socket = socket;
     }
+
+    @Override
+    public boolean equals(Object o) {
+
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DataIPSocketPair entry = (DataIPSocketPair) o;
+        return IPAddress.equals(entry.getIPAddress()) &&
+                port.equals(entry.getPort());
+
+    }
+
+
 }

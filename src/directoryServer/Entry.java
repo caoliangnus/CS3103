@@ -7,10 +7,16 @@ public class Entry {
 
     private int chunkNumber;
     private String address;
+    private String port;
 
-    public Entry(int chunkNumber, String address){
+    public Entry(int chunkNumber, String address, String port){
         this.chunkNumber = chunkNumber;
         this.address = address;
+        this.port = port;
+    }
+
+    public String getPort() {
+        return port;
     }
 
     public int getChunkNumber() {

@@ -62,12 +62,14 @@ public class DirectoryServerMain {
             String IPMixed = connectionSocket.getRemoteSocketAddress().toString();
             String[] IPSplit = IPMixed.split(":");
             String IP = IPSplit[0].replace("/", "");
+            String port = IPSplit[1];
+
             String reply = fromServer.nextLine();
 
 
             if(reply.equals(DATA_SOCKET_IDENTIFIER)) {
                 System.out.println("Data Socket.");
-                DataIPSocketPair dataMapping = new DataIPSocketPair(IP, connectionSocket);
+                DataIPSocketPair dataMapping = new DataIPSocketPair(IP, connectionSocket, port);
                 DataIPToSocketMapping.add(dataMapping);
             }else if(reply.equals(CONTROL_SOCKET_IDENTIFIER)) {
                 System.out.println("Control Socket.");
@@ -75,12 +77,9 @@ public class DirectoryServerMain {
                 threadPool.execute(requestToHandle);
             }else if(reply.equals(SIGNAL_SOCKET_IDENTIFIER)) {
                 System.out.println("Signal Socket.");
-                SignalIPSocketPair signalMapping = new SignalIPSocketPair(IP, connectionSocket);
+                SignalIPSocketPair signalMapping = new SignalIPSocketPair(IP, connectionSocket, port);
                 SignalIPToSocketMapping.add(signalMapping);
             }
-
-
         }
-
     }
 }
