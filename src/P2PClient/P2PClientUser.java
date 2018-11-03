@@ -28,10 +28,7 @@ public class P2PClientUser extends Thread {
     private static final String INVALID_USER_INPUT = "Invalid User Input. Please enter one number only.\n";
     private static final String INVALID_USER_INPUT_NUMBER = "Please enter number only.\n";
     private static final String INVALID_OPTION_NUMBER = "There is no such option number!\n";
-
-
-
-
+    
     public static final int CHUNK_SIZE = 1024; //following MTU byte size of 1500, to play safe make it slightly lesser
 
     public static Socket clientControlSocket;
@@ -49,12 +46,12 @@ public class P2PClientUser extends Thread {
     private static Scanner input = new Scanner(System.in);
     public static String folderDirectory = "";
 
+    private static String ip = "167.99.68.246";
+//    private static String ip = "172.25.102.18";
+
     private void handleUser() {
         try {
 //            clientControlSocket = new Socket(InetAddress.getLocalHost(), SERVER_PORT);
-
-//            String ip = "167.99.68.246";
-            String ip = "172.25.102.18";
 
             //Signaling Connection Socket
             clientSignalSocket = new Socket(ip, SERVER_PORT);
@@ -425,7 +422,7 @@ public class P2PClientUser extends Thread {
             int fileSize = (int) advertisingFile.length();
             int numOfChunks = calculateChunkSize(fileSize);
 
-            String request = INFORM_COMMAND + " " + localAddress + " " + fileName + " " + numOfChunks;
+            String request = INFORM_COMMAND + " " + ip + " " + fileName + " " + numOfChunks;
             // System.out.println(request);
             toServer.println(request);
             toServer.flush();
