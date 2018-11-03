@@ -14,7 +14,8 @@ public class Worker implements Runnable {
     private static final String EXIT_COMMAND = "EXIT";
     private static final String INFORM_COMMAND = "INFORM";
     private static final String INFORM_HOSTNAME_COMMAND = "INFORMHOST";
-    private static final String DOWNLOAD_COMMAND = "DOWNLOAD";
+    private static final String RETURN_SERVER_IP_COMMAND= "RETRIEVE";
+    private static final String DOWNLOAD_COMMAND = "GET";
     private static final String CHUNK_COMMAND = "CHUNK";
     private static final String SET_COMMAND = "SET";
 
@@ -51,6 +52,8 @@ public class Worker implements Runnable {
     private List<FilePair> fileNameList = DirectoryServerMain.fileNameList;
     private Hashtable<String, ArrayList<Entry>> entryList = DirectoryServerMain.entryList;
     private List<String> hostNameList = DirectoryServerMain.hostNameList;
+    private List<DataIPSocketPair> dataIPToSocketMapping = DirectoryServerMain.DataIPToSocketMapping ;
+    private List<SignalIPSocketPair> signalIPToSocketMapping = DirectoryServerMain.SignalIPToSocketMapping;
 
     public Worker(Socket connectionSocket) {
         this.connectionSocket = connectionSocket;
@@ -95,7 +98,7 @@ public class Worker implements Runnable {
                     case INFORM_HOSTNAME_COMMAND:
                         updateHostName(splitRequest[1], splitRequest[2], splitRequest[3]);
                         break;
-                    case DOWNLOAD_COMMAND:
+                    case RETURN_SERVER_IP_COMMAND:
                         returnIPAddressesAndPortForFile(splitRequest[1], splitRequest[2]);
                         break;
                     case EXIT_COMMAND:
@@ -106,6 +109,9 @@ public class Worker implements Runnable {
                         break;
                     case SET_COMMAND:
                         checkAndSetHostName(splitRequest[1]);
+                        break;
+                    case DOWNLOAD_COMMAND:
+                        createDownloadThread(splitRequest[1],splitRequest[2],splitRequest[3]);
                         break;
                     default:
                         // Should not come here. We should return an error code and message here.
@@ -416,6 +422,35 @@ public class Worker implements Runnable {
         }
         toClient.write(CHUNK_UPDATE_SUCCESSFUL_MESSAGE);
         toClient.flush();
+
+    }
+
+    public void createDownloadThread(String peerServerIP,String fileName,String chunkNumber) {
+        Socket uploaderDataSocket = null;
+        Socket downloaderDataSocket;
+        Socket uploaderSignalSocket= null;
+        downloaderDataSocket = connectionSocket;
+        DataWorker dataWorker;
+        int requestChunk = Integer.parseInt(chunkNumber);
+        for(int i=0; i< dataIPToSocketMapping.size(); i++ ) {
+            DataIPSocketPair dataIPPair =  dataIPToSocketMapping.get(i);
+            if(dataIPPair.getIPAddress().equals(peerServerIP)){
+                uploaderDataSocket = dataIPPair.getSocket();
+            }
+        }
+        for(int i=0; i< signalIPToSocketMapping.size(); i++ ) {
+            SignalIPSocketPair signalIPPair =  signalIPToSocketMapping.get(i);
+            if(signalIPPair.getIPAddress().equals(peerServerIP)){
+                uploaderSignalSocket = signalIPPair.getSocket();
+            }
+        }
+
+        try {
+            dataWorker = new DataWorker(uploaderDataSocket,downloaderDataSocket,uploaderSignalSocket, fileName, requestChunk);
+            dataWorker.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 
