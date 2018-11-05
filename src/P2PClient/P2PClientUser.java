@@ -414,11 +414,13 @@ public class P2PClientUser extends Thread {
                 int size = dataFromTracker.read(buffer, 0, CHUNK_SIZE);
 //                    System.out.println("Chunk: " + chunkToDownload + " SIZE " + size);
 
-                fileToDownload.setChunk(chunkToDownload-1, buffer);
-
-                System.out.println("Downloading from: " + hostNames[0] + " Chunk No." + chunkToDownload);
-
-//                return;
+                if (size >= 0) {
+                    fileToDownload.setChunk(chunkToDownload-1, buffer);
+                    System.out.println("Downloading from: " + hostNames[0] + " Chunk No." + chunkToDownload);
+                    return;
+                } else {
+                    continue;
+                }
 
             } catch (Exception e) {
                 // for now, we just continue to the next IP to download the chunk
