@@ -307,10 +307,11 @@ public class Worker implements Runnable {
     private synchronized void updateDirectory (String fileName, String chunkNum, String hostName){
 
         boolean fileExisted = true;
-
+        
         // Check if host name exists
         if(!DirectoryServerMain.hostNameList.contains(hostName)){
             // Tell client the host name is wrong.
+            System.out.println("Host name is wrong");
         }
 
         //Check if the file advertised is a text file
@@ -327,20 +328,25 @@ public class Worker implements Runnable {
             return;
         }
 
+
         FilePair temp = new FilePair(fileName, Integer.parseInt(chunkNum));
         //Check if file already exists, if not update the fileNameList
         try {
             fileNameListMutex.acquire();
+
         } catch (InterruptedException e) {
             fileNameListMutex.release();
             e.printStackTrace();
         }
+
 
         if(!fileNameList.contains(temp)){
             fileNameList.add(temp);
             fileExisted = false;
         }
         fileNameListMutex.release();
+
+
         //Update entry table (Subject to discussion, for now i just assume the client will advertise when he get the
         //whole file)
         if(!fileExisted){
@@ -358,6 +364,7 @@ public class Worker implements Runnable {
             entryListMutex.release();
         }else {
             //Check if this file was advertised by this host earlier, if yes then don't add duplicate entries
+            System.out.println("File existed");
             boolean hasAdvertised = false;
             List<Entry> entries = entryList.get(fileName);
             for(Entry entry : entries) {
@@ -444,6 +451,7 @@ public class Worker implements Runnable {
         if (!fileNameList.contains(temp)) {
             toClient.write(FILE_NOT_PRESENT_MESSAGE);
             toClient.flush();
+            fileNameListMutex.release();
             return;
         }
 
@@ -455,11 +463,10 @@ public class Worker implements Runnable {
                 // For now we just return the number only
                 toClient.write(reply);
                 toClient.flush();
+                fileNameListMutex.release();
                 return;
             }
         }
-
-        fileNameListMutex.release();
 
     }
 
