@@ -6,18 +6,13 @@ public class Entry {
 
 
     private int chunkNumber;
-    private String address;
-    private String port;
+    private String hostName;
 
-    public Entry(int chunkNumber, String address, String port){
+    public Entry(int chunkNumber, String hostName){
         this.chunkNumber = chunkNumber;
-        this.address = address;
-        this.port = port;
+        this.hostName = hostName;
     }
 
-    public String getPort() {
-        return port;
-    }
 
     public int getChunkNumber() {
         return chunkNumber;
@@ -27,12 +22,13 @@ public class Entry {
         this.chunkNumber = chunkNumber;
     }
 
-    public String getAddress() {
-        return address;
+
+    public String getHostName() {
+        return hostName;
     }
 
-    public void setAddress(String address) {
-        this.address = address;
+    public void setHostName(String hostName) {
+        this.hostName = hostName;
     }
 
     @Override
@@ -41,11 +37,11 @@ public class Entry {
         if (o == null || getClass() != o.getClass()) return false;
         Entry entry = (Entry) o;
         return chunkNumber == entry.chunkNumber &&
-                address.equals(entry.getAddress());
+                hostName.equals(entry.getHostName());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(chunkNumber, address);
+        return Objects.hash(chunkNumber, hostName);
     }
 }

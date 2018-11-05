@@ -3,10 +3,7 @@ package P2PClient;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Arrays;
 import java.util.Scanner;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
 public class P2PClientUser extends Thread {
@@ -17,7 +14,7 @@ public class P2PClientUser extends Thread {
     public static final String QUERY_COMMAND = "FIND";
     public static final String EXIT_COMMAND = "EXIT";
     public static final String INFORM_COMMAND = "INFORM";
-    public static final String RETURN_SERVER_IP_COMMAND = "RETRIEVE";
+    public static final String RETURN_HOST_NAMES_IP_COMMAND = "RETRIEVE";
     public static final String DOWNLOAD_COMMAND = "GET";
 
     public static Semaphore mapMutex = new Semaphore(1);
@@ -31,6 +28,9 @@ public class P2PClientUser extends Thread {
 
     public static final int CHUNK_SIZE = 1024; //following MTU byte size of 1500, to play safe make it slightly lesser
 
+    public static Socket clientInitializationSocket;
+    public static PrintWriter initializationToServer;
+    public static Scanner initializationFromServer;
     public static Socket clientControlSocket;
     public static Socket clientDataSocket;
     public static Socket clientSignalSocket;
@@ -46,19 +46,58 @@ public class P2PClientUser extends Thread {
     private static Scanner input = new Scanner(System.in);
     public static String folderDirectory = "";
 
+    private static String userName = "";
+
     private static String ip = "167.99.68.246";
 //    private static String ip = "172.25.102.18";
 
     private void handleUser() {
         try {
-//            clientControlSocket = new Socket(InetAddress.getLocalHost(), SERVER_PORT);
+
+            // First, establish a username.
+            String tempUserName = "";
+            boolean firstTimeAskingForUsername = true;
+            // This socket and streams are purely for establishing a username with the tracker.
+            clientInitializationSocket = new Socket(ip, SERVER_PORT);
+            initializationToServer = new PrintWriter(clientInitializationSocket.getOutputStream());
+            initializationFromServer = new Scanner(clientInitializationSocket.getInputStream());
+
+
+            // Tell server this socket is for establishing username.
+            initializationToServer.write("INITIALIZATION");
+            initializationToServer.flush();
+            while(true) {
+                if (firstTimeAskingForUsername) {
+                    System.out.println("Please provide your username: ");
+                } else {
+                    System.out.println("Username " + tempUserName + " has already been used. " +
+                            "Please provide another username:");
+                }
+
+                tempUserName = input.nextLine().trim();
+                initializationToServer.write("CHECK " + tempUserName + "\n");
+
+                String replyFromServer = initializationFromServer.nextLine();
+                initializationToServer.flush();
+                if (replyFromServer.equals("AVAILABLE")) {
+                    userName = tempUserName;
+                    initializationToServer.close();
+                    initializationFromServer.close();
+                    break;
+                } else {
+                    firstTimeAskingForUsername = false;
+                }
+            }
+
+
+
 
             //Signaling Connection Socket
             clientSignalSocket = new Socket(ip, SERVER_PORT);
             signalToServer = new PrintWriter(clientSignalSocket.getOutputStream(), true);
             signalFromServer = new Scanner(clientSignalSocket.getInputStream());
 
-            signalToServer.println("SIGNAL\n");
+            signalToServer.println("SIGNAL " + userName + "\n");
 
             P2PClientUserSignalWorker signalWorker = new P2PClientUserSignalWorker(clientSignalSocket);
             signalWorker.start();
@@ -71,7 +110,7 @@ public class P2PClientUser extends Thread {
             dataToTracker = new BufferedOutputStream(clientDataSocket.getOutputStream());
             dataFromTracker = new BufferedInputStream(clientDataSocket.getInputStream());
 
-            dateToServer.println("DATA\n");
+            dateToServer.println("DATA "+ userName + "\n");
 
             //Control Connection Socket
             clientControlSocket = new Socket(ip, SERVER_PORT);
@@ -79,7 +118,7 @@ public class P2PClientUser extends Thread {
             toServer = new PrintWriter(clientControlSocket.getOutputStream(), true);
             fromServer = new Scanner(clientControlSocket.getInputStream());
 
-            toServer.println("CONTROL\n");
+            toServer.println("CONTROL " + userName + "\n");
 
             changeFileDirectory();
 
@@ -313,12 +352,12 @@ public class P2PClientUser extends Thread {
         //AtomicIntegerArray map = new AtomicIntegerArray(tempMap);
 
 //        ExecutorService threadPool = Executors.newFixedThreadPool(10);
-        String IPReply = "";
+        String HostNameReply = "";
 
         // Check for any chunks that is available for downloading
         for (int i = 0; i < numberOfChunks; i++) {
             // Obtain a list of IP address to download from
-            String IPRequest = RETURN_SERVER_IP_COMMAND + " " + filename + " " + (i + 1) + "\n";
+            String IPRequest = RETURN_HOST_NAMES_IP_COMMAND + " " + filename + " " + (i + 1) + "\n";
             toServer.write(IPRequest);
 
             System.out.println("REQUEST: " + IPRequest);
@@ -327,17 +366,17 @@ public class P2PClientUser extends Thread {
 
             while (true) {
                 if (fromServer.hasNextLine()) {
-                    IPReply = fromServer.nextLine();
+                    HostNameReply = fromServer.nextLine();
                     break;
                 }
             }
 
-            System.out.println("REPLY: " + IPReply);
+            System.out.println("REPLY: " + HostNameReply);
 
 
-            String[] splitAddress = IPReply.split(",");
+            String[] splitHostNames = HostNameReply.split(",");
 
-            downloadChunks(splitAddress, fileToDownload, i+1);
+            downloadChunks(splitHostNames, fileToDownload, i+1);
 
             System.out.println("Downloaded chunk: " + (i+1));
 
@@ -348,15 +387,15 @@ public class P2PClientUser extends Thread {
     }
 
 
-    private void downloadChunks(String[] addresses, P2PFile fileToDownload, int chunkToDownload) {
+    private void downloadChunks(String[] hostNames, P2PFile fileToDownload, int chunkToDownload) {
 
-        for (int i = 0; i < addresses.length; i++) {
+        for (int i = 0; i < hostNames.length; i++) {
             try {
 
                 // Buffer to store byte data from transient server to write into file
                 byte[] buffer = new byte[CHUNK_SIZE];
 
-                String clientRequest = DOWNLOAD_COMMAND + " " + addresses[0] + " " + fileToDownload.getFileName() + " " + chunkToDownload + "\n";
+                String clientRequest = DOWNLOAD_COMMAND + " " + userName + " " + hostNames[0] + " " + fileToDownload.getFileName() + " " + chunkToDownload + "\n";
 
                 System.out.println(clientRequest);
 
@@ -368,7 +407,7 @@ public class P2PClientUser extends Thread {
 
                 fileToDownload.setChunk(chunkToDownload-1, buffer);
 
-                System.out.println("Downloading from: " + addresses[0] + " Chunk No." + chunkToDownload);
+                System.out.println("Downloading from: " + hostNames[0] + " Chunk No." + chunkToDownload);
 
 //                return;
 
@@ -417,7 +456,7 @@ public class P2PClientUser extends Thread {
             int fileSize = (int) advertisingFile.length();
             int numOfChunks = calculateChunkSize(fileSize);
 
-            String request = INFORM_COMMAND  + " " + fileName + " " + numOfChunks;
+            String request = INFORM_COMMAND  + " " + fileName + " " + numOfChunks + " " + userName + "\n";
             // System.out.println(request);
             toServer.println(request);
             toServer.flush();
@@ -454,8 +493,7 @@ public class P2PClientUser extends Thread {
 
     private void exitFromProgram() {
         try {
-            String localAddress = InetAddress.getLocalHost().getHostAddress();
-            String request = EXIT_COMMAND + " " + localAddress;
+            String request = EXIT_COMMAND + " " + userName + "\n";
             toServer.println(request);
 
             while(true) {
