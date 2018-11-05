@@ -15,7 +15,7 @@ import java.util.concurrent.Semaphore;
 public class DirectoryServerMain {
 
     public static final int SERVER_PORT = 8888;
-    public static final int NUMBER_OF_THREADS = 10;
+    public static final int NUMBER_OF_THREADS = 20;
     public static final String DATA_SOCKET_IDENTIFIER = "DATA";
     public static final String CONTROL_SOCKET_IDENTIFIER = "CONTROL";
     public static final String SIGNAL_SOCKET_IDENTIFIER = "SIGNAL";
@@ -61,11 +61,6 @@ public class DirectoryServerMain {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-//
-//            String IPMixed = connectionSocket.getRemoteSocketAddress().toString();
-//            String[] IPSplit = IPMixed.split(":");
-//            String IP = IPSplit[0].replace("/", "");
-//            String port = IPSplit[1];
 
             String replyFromClient = "";
             while(true) {
@@ -111,36 +106,15 @@ public class DirectoryServerMain {
                 SignalHostNameToSocketMapping.add(signalMapping);
                 mappingMutex.release();
             }else{
-                System.out.println("Initialization Socket.");
-                while(true) {
-                    String request = "";
-                    while(true) {
-                        if (fromClient.hasNextLine()) {
-                            request = fromClient.nextLine();
-                            break;
-                        }
-                    }
 
-                    String[] splitRequest = request.split("\\s+");
-                    String requestedHostName = splitRequest[1].trim();
-                    if (!splitRequest[0].equals("CHECK")) {
-                        // tell client wrong command.
-                        break;
-                    }
-                    if(hostNameList.contains(requestedHostName)) {
-                        // tell client hostname has been used.
-                        toClient.write("NOT AVAILABLE\n");
-                        toClient.flush();
-                    }else{
-                        toClient.write("AVAILABLE\n");
-                        toClient.flush();
-                        hostNameList.add(requestedHostName);
-                        toClient.close();
-                        fromClient.close();
-                        break;
-                    }
-
+                ResolveHostNameWorker hostWorker = null;
+                try {
+                    hostWorker = new ResolveHostNameWorker(connectionSocket);
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
+                hostWorker.start();
+
             }
         }
     }
