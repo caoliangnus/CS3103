@@ -368,9 +368,7 @@ public class P2PClientUser extends Thread {
             // Obtain a list of IP address to download from
             String IPRequest = RETURN_HOST_NAMES_IP_COMMAND + " " + filename + " " + (i + 1) + "\n";
             toServer.write(IPRequest);
-
-            System.out.println("REQUEST: " + IPRequest);
-
+            
             toServer.flush();
 
             while (true) {
@@ -380,14 +378,9 @@ public class P2PClientUser extends Thread {
                 }
             }
 
-            System.out.println("REPLY: " + HostNameReply);
-
-
             String[] splitHostNames = HostNameReply.split(",");
 
             downloadChunks(splitHostNames, fileToDownload, i+1);
-
-            System.out.println("Downloaded chunk: " + (i+1));
 
         }
 
@@ -406,8 +399,6 @@ public class P2PClientUser extends Thread {
 
                 String clientRequest = DOWNLOAD_COMMAND + " " + userName + " " + hostNames[0] + " " + fileToDownload.getFileName() + " " + chunkToDownload + "\n";
 
-                System.out.println(clientRequest);
-
                 toServer.write(clientRequest);
                 toServer.flush();
 
@@ -416,7 +407,6 @@ public class P2PClientUser extends Thread {
 
                 if (size >= 0) {
                     fileToDownload.setChunk(chunkToDownload-1, buffer);
-                    System.out.println("Downloading from: " + hostNames[0] + " Chunk No." + chunkToDownload);
                     return;
                 } else {
                     continue;
