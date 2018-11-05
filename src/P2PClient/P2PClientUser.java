@@ -48,8 +48,8 @@ public class P2PClientUser extends Thread {
 
     private static String userName = "";
 
-//    private static String ip = "167.99.68.246";
-    private static String ip = "172.25.102.18";
+    private static String ip = "167.99.68.246";
+//    private static String ip = "172.25.102.18";
 
     private void handleUser() {
         try {
