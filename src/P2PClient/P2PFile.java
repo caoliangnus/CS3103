@@ -99,7 +99,7 @@ public class P2PFile {
     }
 
     public boolean writeToFile() {
-        System.out.println("Writing to file: " + filename + "Total Chunk No: " + chunks.size());
+        System.out.println("Writing to file: " + filename);
         System.out.println("Location: " + (P2PClientUser.folderDirectory + File.separator +  filename));
         System.out.println();
         Set<Integer> keySet = chunks.keySet();

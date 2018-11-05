@@ -307,7 +307,7 @@ public class Worker implements Runnable {
     private synchronized void updateDirectory (String fileName, String chunkNum, String hostName){
 
         boolean fileExisted = true;
-        
+
         // Check if host name exists
         if(!DirectoryServerMain.hostNameList.contains(hostName)){
             // Tell client the host name is wrong.

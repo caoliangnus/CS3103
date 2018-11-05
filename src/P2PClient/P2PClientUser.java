@@ -363,12 +363,15 @@ public class P2PClientUser extends Thread {
 //        ExecutorService threadPool = Executors.newFixedThreadPool(10);
         String HostNameReply = "";
 
+
+        System.out.println("Please wait... ...");
+
         // Check for any chunks that is available for downloading
         for (int i = 0; i < numberOfChunks; i++) {
             // Obtain a list of IP address to download from
             String IPRequest = RETURN_HOST_NAMES_IP_COMMAND + " " + filename + " " + (i + 1) + "\n";
             toServer.write(IPRequest);
-            
+
             toServer.flush();
 
             while (true) {
