@@ -61,7 +61,7 @@ public class P2PClientUserSignalWorker extends Thread {
 
             String filename = splitRequest[1];
             int requestChunk = Integer.parseInt(splitRequest[2]);
-            System.out.println("Requester IP: " + signalSocket.getRemoteSocketAddress() + ", File Name: " + filename + ", Chunk Requested: " + requestChunk);
+//            System.out.println("Requester IP: " + signalSocket.getRemoteSocketAddress() + ", File Name: " + filename + ", Chunk Requested: " + requestChunk);
 
             byte[] buffer;
             File requestedFile = new File(P2PClientUser.folderDirectory + File.separator + filename);
