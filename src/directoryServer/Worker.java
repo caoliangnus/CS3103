@@ -1,9 +1,10 @@
 package directoryServer;
 
+import static directoryServer.DirectoryServerMain.mappingMutex;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.util.*;
 import java.util.concurrent.Semaphore;
 
@@ -44,10 +45,12 @@ public class Worker implements Runnable {
     private PrintWriter toClient;
     private Semaphore fileNameListMutex = new Semaphore(1);
     private Semaphore entryListMutex = new Semaphore(1);
+    private Semaphore hostNameListMutex = new Semaphore(1);
     private List<FilePair> fileNameList = DirectoryServerMain.fileNameList;
+    private List<String> hostNameList = DirectoryServerMain.hostNameList;
     private Hashtable<String, ArrayList<Entry>> entryList = DirectoryServerMain.entryList;
-    private List<DataIPSocketPair> dataIPToSocketMapping = DirectoryServerMain.DataIPToSocketMapping ;
-    private List<SignalIPSocketPair> signalIPToSocketMapping = DirectoryServerMain.SignalIPToSocketMapping;
+    private List<DataHostNameSocketPair> dataHostNameToSocketMapping = DirectoryServerMain.DataHostNameToSocketMapping;
+    private List<SignalHostNameSocketPair> signalHostNameToSocketMapping = DirectoryServerMain.SignalHostNameToSocketMapping;
 
     public Worker(Socket connectionSocket) {
         this.connectionSocket = connectionSocket;
@@ -87,10 +90,10 @@ public class Worker implements Runnable {
                         searchForFile(splitRequest[1]);
                         break;
                     case INFORM_COMMAND:
-                        updateDirectory(splitRequest[1], splitRequest[2]);
+                        updateDirectory(splitRequest[1], splitRequest[2], splitRequest[3]);
                         break;
                     case RETURN_SERVER_IP_COMMAND:
-                        returnIPAddressesAndPortForFile(splitRequest[1], splitRequest[2]);
+                        returnHostNamesForFile(splitRequest[1], splitRequest[2]);
                         break;
                     case EXIT_COMMAND:
                         initializeClientExit(splitRequest[1]);
@@ -99,7 +102,7 @@ public class Worker implements Runnable {
                         returnTotalChunkNumber(splitRequest[1]);
                         break;
                     case DOWNLOAD_COMMAND:
-                        createDownloadThread(splitRequest[1],splitRequest[2],splitRequest[3]);
+                        createDownloadThread(splitRequest[1],splitRequest[2],splitRequest[3], splitRequest[4]);
                         break;
                     default:
                         // Should not come here. We should return an error code and message here.
@@ -116,7 +119,7 @@ public class Worker implements Runnable {
     }
 
 
-    private synchronized void returnIPAddressesAndPortForFile(String filename, String chunkNum) {
+    private synchronized void returnHostNamesForFile(String filename, String chunkNum) {
         boolean doesChunkExist = false;
 
         System.out.println("Name: " + filename + " Chunk #: " + chunkNum);
@@ -141,11 +144,11 @@ public class Worker implements Runnable {
         int chunkNumber = Integer.parseInt(chunkNum);
         int counter = 0;
 
-        //extract list of ip addresses which have this chunk
+        //extract list of host names which have this chunk
         List<String> chunkList = new ArrayList<>();
         for(int k=0;k<listOfEntries.size();k++){
             if(listOfEntries.get(k).getChunkNumber() == chunkNumber) {
-                chunkList.add(listOfEntries.get(k).getAddress() + ":" + listOfEntries.get(k).getPort());
+                chunkList.add(listOfEntries.get(k).getHostName());
             }
         }
 
@@ -154,8 +157,8 @@ public class Worker implements Runnable {
         shuffleList(chunkList);
 
         //generate message with at most 10 ip addresses
-        for(String ipPort : chunkList) {
-            IPAddressesAndPorts.append(ipPort);
+        for(String hostName : chunkList) {
+            IPAddressesAndPorts.append(hostName);
             IPAddressesAndPorts.append(',');
             counter++;
             doesChunkExist = true;
@@ -196,7 +199,7 @@ public class Worker implements Runnable {
         entryList.set(randomIndex, tempEntry);
     }
 
-    private synchronized void initializeClientExit(String IPAdress) {
+    private synchronized void initializeClientExit(String hostName) {
         try {
             entryListMutex.acquire();
         } catch (InterruptedException e) {
@@ -208,7 +211,7 @@ public class Worker implements Runnable {
             Iterator<Entry> iterator = list.iterator();
             while(iterator.hasNext()){
                 Entry entry = iterator.next();
-                if(entry.getAddress().equals(IPAdress)){
+                if(entry.getHostName().equals(hostName)){
                     iterator.remove();
 
                     // I am not sure if we should do it this way
@@ -229,6 +232,28 @@ public class Worker implements Runnable {
         });
 
         entryListMutex.release();
+        try {
+            hostNameListMutex.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        hostNameList.remove(hostName);
+        hostNameListMutex.release();
+
+        try {
+            mappingMutex.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        DataHostNameSocketPair tempPair1 = new DataHostNameSocketPair(hostName, null);
+        SignalHostNameSocketPair tempPair2 = new SignalHostNameSocketPair(hostName, null);
+        dataHostNameToSocketMapping.remove(tempPair1);
+        signalHostNameToSocketMapping.remove(tempPair2);
+
+        mappingMutex.release();
+
         toClient.write(EXIT_SUCCESSFUL_MESSAGE);
         toClient.flush();
     }
@@ -279,20 +304,13 @@ public class Worker implements Runnable {
         fileNameListMutex.release();
     }
 
-    private synchronized void updateDirectory (String fileName, String chunkNum){
+    private synchronized void updateDirectory (String fileName, String chunkNum, String hostName){
 
         boolean fileExisted = true;
 
-        String IPMixed = connectionSocket.getRemoteSocketAddress().toString();
-        String[] IPSplit = IPMixed.split(":");
-        String ip = IPSplit[0].replace("/", "");
-        String port = IPSplit[1];
-
-        //Check if the ip address given is of a valid format
-        if(!validIP(ip)){
-            toClient.write(INVALID_FORMAT_IP_ADDRESS_MESSAGE);
-            toClient.flush();
-            return;
+        // Check if host name exists
+        if(!DirectoryServerMain.hostNameList.contains(hostName)){
+            // Tell client the host name is wrong.
         }
 
         //Check if the file advertised is a text file
@@ -308,8 +326,6 @@ public class Worker implements Runnable {
             toClient.flush();
             return;
         }
-
-
 
         FilePair temp = new FilePair(fileName, Integer.parseInt(chunkNum));
         //Check if file already exists, if not update the fileNameList
@@ -330,7 +346,7 @@ public class Worker implements Runnable {
         if(!fileExisted){
             ArrayList<Entry> entries = new ArrayList<>();
             for(int i =0;i<Integer.parseInt(chunkNum);i++){
-                entries.add(new Entry(i+1, ip, port));
+                entries.add(new Entry(i+1, hostName));
             }
             try {
                 entryListMutex.acquire();
@@ -342,12 +358,19 @@ public class Worker implements Runnable {
             entryListMutex.release();
         }else {
             //Check if this file was advertised by this host earlier, if yes then don't add duplicate entries
-
-            if(entryList.get(fileName).get(0).getAddress().equals(ip)){
+            boolean hasAdvertised = false;
+            List<Entry> entries = entryList.get(fileName);
+            for(Entry entry : entries) {
+                if (entry.getHostName().equals(hostName)) {
+                    hasAdvertised = true;
+                    break;
+                }
+            }
+            if(hasAdvertised){
                 System.out.println(fileName + " has been advertised earlier. ");
             }else {
                 for (int j = 0; j < Integer.parseInt(chunkNum); j++) {
-                    entryList.get(fileName).add(new Entry(j + 1, ip, port));
+                    entryList.get(fileName).add(new Entry(j + 1, hostName));
 
                 }
             }
@@ -359,49 +382,29 @@ public class Worker implements Runnable {
 
     }
 
-    public void createDownloadThread(String peerServerIPPort,String fileName,String chunkNumber) {
+    public void createDownloadThread(String downloaderHostName, String uploaderHostName, String fileName, String chunkNumber) {
         Socket uploaderDataSocket = null;
         Socket downloaderDataSocket = null;
         Socket uploaderSignalSocket= null;
 
-        String[] peerServerIPPortArray = peerServerIPPort.split(":");
-        String peerServerIP = peerServerIPPortArray[0];
-        String peerServerPort = peerServerIPPortArray[1];
-
-        System.out.println("SERVER: " + peerServerIP +"PORT: " + peerServerPort);
-
-
-        String IPMixed = connectionSocket.getRemoteSocketAddress().toString();
-        String[] IPSplit = IPMixed.split(":");
-        String IP = IPSplit[0].replace("/", "");
-        String port = IPSplit[1];
 
         DataWorker dataWorker;
         int requestChunk = Integer.parseInt(chunkNumber);
 
-        for(int i=0; i< dataIPToSocketMapping.size(); i++ ) {
-            DataIPSocketPair dataIPPair =  dataIPToSocketMapping.get(i);
+        for(int i = 0; i< dataHostNameToSocketMapping.size(); i++ ) {
+            DataHostNameSocketPair dataIPPair =  dataHostNameToSocketMapping.get(i);
 
-            if(dataIPPair.getIPAddress().trim().equals(IP.trim()) && dataIPPair.getPort().trim().equals(port.trim())){
+            if(dataIPPair.getHostName().equals(downloaderHostName)){
                 downloaderDataSocket = dataIPPair.getSocket();
             }
         }
 
 
-        System.out.println("START TESTING:::::");
-        System.out.println("SER: " + peerServerIP);
-        System.out.println("PO: " + peerServerPort);
+        for(int i = 0; i< dataHostNameToSocketMapping.size(); i++ ) {
+            DataHostNameSocketPair dataIPPair =  dataHostNameToSocketMapping.get(i);
 
-        for(int i=0; i< dataIPToSocketMapping.size(); i++ ) {
-            DataIPSocketPair dataIPPair =  dataIPToSocketMapping.get(i);
-
-            System.out.println(dataIPPair.getIPAddress());
-            System.out.println(dataIPPair.getPort());
-
-
-            if(dataIPPair.getIPAddress().trim().equals(peerServerIP.trim())  && dataIPPair.getPort().trim().equals(peerServerPort.trim())){
+            if(dataIPPair.getHostName().equals(uploaderHostName)){
                 uploaderDataSocket = dataIPPair.getSocket();
-
                 if (uploaderDataSocket == null) {
                     System.out.println("NULL");
                 } else {
@@ -410,9 +413,9 @@ public class Worker implements Runnable {
             }
 
         }
-        for(int i=0; i< signalIPToSocketMapping.size(); i++ ) {
-            SignalIPSocketPair signalIPPair =  signalIPToSocketMapping.get(i);
-            if(signalIPPair.getIPAddress().trim().equals(peerServerIP.trim())  && signalIPPair.getPort().equals(peerServerPort)){
+        for(int i = 0; i< signalHostNameToSocketMapping.size(); i++ ) {
+            SignalHostNameSocketPair signalIPPair =  signalHostNameToSocketMapping.get(i);
+            if(signalIPPair.getHostName().equals(uploaderHostName)){
                 uploaderSignalSocket = signalIPPair.getSocket();
             }
         }

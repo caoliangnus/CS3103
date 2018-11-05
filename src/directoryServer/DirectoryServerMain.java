@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 
 public class DirectoryServerMain {
 
@@ -20,8 +21,10 @@ public class DirectoryServerMain {
     public static final String SIGNAL_SOCKET_IDENTIFIER = "SIGNAL";
     public static final Hashtable<String, ArrayList<Entry>> entryList = new Hashtable<>();
     public static final List<FilePair> fileNameList = new ArrayList<>();
-    public static final List<DataIPSocketPair> DataIPToSocketMapping = new ArrayList<>();
-    public static final List<SignalIPSocketPair> SignalIPToSocketMapping = new ArrayList<>();
+    public static final List<DataHostNameSocketPair> DataHostNameToSocketMapping = new ArrayList<>();
+    public static final List<SignalHostNameSocketPair> SignalHostNameToSocketMapping = new ArrayList<>();
+    public static final List<String> hostNameList = new ArrayList<>();
+    public static final Semaphore mappingMutex = new Semaphore(1);
 
     private static ExecutorService threadPool;
 
@@ -51,34 +54,73 @@ public class DirectoryServerMain {
 
             // Asking peer what kind of socket connection this is
             PrintWriter toClient = null;
-            Scanner fromServer = null;
+            Scanner fromClient = null;
             try {
                 toClient = new PrintWriter(connectionSocket.getOutputStream(), true);
-                fromServer = new Scanner(connectionSocket.getInputStream());
+                fromClient = new Scanner(connectionSocket.getInputStream());
             } catch (IOException e) {
                 e.printStackTrace();
             }
+//
+//            String IPMixed = connectionSocket.getRemoteSocketAddress().toString();
+//            String[] IPSplit = IPMixed.split(":");
+//            String IP = IPSplit[0].replace("/", "");
+//            String port = IPSplit[1];
 
-            String IPMixed = connectionSocket.getRemoteSocketAddress().toString();
-            String[] IPSplit = IPMixed.split(":");
-            String IP = IPSplit[0].replace("/", "");
-            String port = IPSplit[1];
-
-            String reply = fromServer.nextLine();
+            String replyFromClient = fromClient.nextLine();
+            String[] splitReply = replyFromClient.split("\\s+");
+            String reply = splitReply[0];
+            String hostName = splitReply[1];
 
 
             if(reply.equals(DATA_SOCKET_IDENTIFIER)) {
                 System.out.println("Data Socket.");
-                DataIPSocketPair dataMapping = new DataIPSocketPair(IP, connectionSocket, port);
-                DataIPToSocketMapping.add(dataMapping);
+                DataHostNameSocketPair dataMapping = new DataHostNameSocketPair(hostName, connectionSocket);
+                try {
+                    mappingMutex.acquire();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                DataHostNameToSocketMapping.add(dataMapping);
+                mappingMutex.release();
             }else if(reply.equals(CONTROL_SOCKET_IDENTIFIER)) {
                 System.out.println("Control Socket.");
                 Worker requestToHandle = new Worker(connectionSocket);
                 threadPool.execute(requestToHandle);
             }else if(reply.equals(SIGNAL_SOCKET_IDENTIFIER)) {
                 System.out.println("Signal Socket.");
-                SignalIPSocketPair signalMapping = new SignalIPSocketPair(IP, connectionSocket, port);
-                SignalIPToSocketMapping.add(signalMapping);
+                SignalHostNameSocketPair signalMapping = new SignalHostNameSocketPair(hostName, connectionSocket);
+                try {
+                    mappingMutex.acquire();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                SignalHostNameToSocketMapping.add(signalMapping);
+                mappingMutex.release();
+            }else{
+                System.out.println("Initialization Socket.");
+                while(true) {
+                    String request = fromClient.nextLine();
+                    String[] splitRequest = request.split("\\s+");
+                    String requestedHostName = splitRequest[1].trim();
+                    if (!splitRequest[0].equals("CHECK")) {
+                        // tell client wrong command.
+                        break;
+                    }
+                    if(hostNameList.contains(requestedHostName)) {
+                        // tell client hostname has been used.
+                        toClient.write("NOT AVAILABLE");
+                        toClient.flush();
+                    }else{
+                        toClient.write("AVAILABLE");
+                        toClient.flush();
+                        hostNameList.add(requestedHostName);
+                        toClient.close();
+                        fromClient.close();
+                        break;
+                    }
+
+                }
             }
         }
     }
