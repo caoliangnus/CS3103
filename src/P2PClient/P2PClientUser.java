@@ -48,8 +48,8 @@ public class P2PClientUser extends Thread {
 
     private static String userName = "";
 
-    private static String ip = "167.99.68.246";
-//    private static String ip = "172.25.102.18";
+//    private static String ip = "167.99.68.246";
+    private static String ip = "172.25.102.18";
 
     private void handleUser() {
         try {
@@ -64,7 +64,7 @@ public class P2PClientUser extends Thread {
 
 
             // Tell server this socket is for establishing username.
-            initializationToServer.write("INITIALIZATION");
+            initializationToServer.write("INITIALIZATION\n");
             initializationToServer.flush();
             while(true) {
                 if (firstTimeAskingForUsername) {
@@ -76,8 +76,19 @@ public class P2PClientUser extends Thread {
 
                 tempUserName = input.nextLine().trim();
                 initializationToServer.write("CHECK " + tempUserName + "\n");
+                initializationToServer.flush();
 
-                String replyFromServer = initializationFromServer.nextLine();
+
+                String replyFromServer = "";
+                while (true) {
+                    if (initializationFromServer.hasNextLine()) {
+                        replyFromServer = initializationFromServer.nextLine();
+                        break;
+                    }
+                }
+
+                System.out.println(replyFromServer);
+//                String replyFromServer = initializationFromServer.nextLine();
                 initializationToServer.flush();
                 if (replyFromServer.equals("AVAILABLE")) {
                     userName = tempUserName;
@@ -88,8 +99,6 @@ public class P2PClientUser extends Thread {
                     firstTimeAskingForUsername = false;
                 }
             }
-
-
 
 
             //Signaling Connection Socket

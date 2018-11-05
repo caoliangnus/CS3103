@@ -67,11 +67,24 @@ public class DirectoryServerMain {
 //            String IP = IPSplit[0].replace("/", "");
 //            String port = IPSplit[1];
 
-            String replyFromClient = fromClient.nextLine();
+            String replyFromClient = "";
+            while(true) {
+                if (fromClient.hasNextLine()) {
+                    replyFromClient = fromClient.nextLine();
+                    break;
+                }
+            }
+
+
+//            String replyFromClient = fromClient.nextLine();
             String[] splitReply = replyFromClient.split("\\s+");
             String reply = splitReply[0];
-            String hostName = splitReply[1];
 
+            String hostName = "";
+
+            if (!reply.equals("INITIALIZATION")) {
+                hostName = splitReply[1];
+            }
 
             if(reply.equals(DATA_SOCKET_IDENTIFIER)) {
                 System.out.println("Data Socket.");
@@ -100,7 +113,14 @@ public class DirectoryServerMain {
             }else{
                 System.out.println("Initialization Socket.");
                 while(true) {
-                    String request = fromClient.nextLine();
+                    String request = "";
+                    while(true) {
+                        if (fromClient.hasNextLine()) {
+                            request = fromClient.nextLine();
+                            break;
+                        }
+                    }
+
                     String[] splitRequest = request.split("\\s+");
                     String requestedHostName = splitRequest[1].trim();
                     if (!splitRequest[0].equals("CHECK")) {
@@ -109,10 +129,10 @@ public class DirectoryServerMain {
                     }
                     if(hostNameList.contains(requestedHostName)) {
                         // tell client hostname has been used.
-                        toClient.write("NOT AVAILABLE");
+                        toClient.write("NOT AVAILABLE\n");
                         toClient.flush();
                     }else{
-                        toClient.write("AVAILABLE");
+                        toClient.write("AVAILABLE\n");
                         toClient.flush();
                         hostNameList.add(requestedHostName);
                         toClient.close();
