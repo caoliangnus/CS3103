@@ -131,6 +131,11 @@ public class Worker extends Thread {
             return;
         }
 
+        try {
+            entryListMutex.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         List<Entry> listOfEntries = new ArrayList(entryList.get(filename));
         entryListMutex.release();
         if (listOfEntries == null) {
