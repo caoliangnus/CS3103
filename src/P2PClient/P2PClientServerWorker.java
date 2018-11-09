@@ -3,6 +3,7 @@ package P2PClient;
 import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
+import java.util.concurrent.Semaphore;
 
 public class P2PClientServerWorker implements Runnable {
 
@@ -60,14 +61,24 @@ public class P2PClientServerWorker implements Runnable {
 
         String filename = splitRequest[1];
         int requestChunk = Integer.parseInt(splitRequest[2]);
-        System.out.println("Requester IP: " + peerSocket.getRemoteSocketAddress() + ", File Name: " + filename + ", Chunk Requested: " + requestChunk);
+        //System.out.println("Requester IP: " + peerSocket.getRemoteSocketAddress() + ", File Name: " + filename + ", Chunk Requested: " + requestChunk);
         byte[] buffer;
+
+        Semaphore mutex = P2PClientMain.mutexMapping.get(filename);
+        try {
+            mutex.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         File requestedFile = new File(filename);
         int noOfChunksOfFile = (int) (requestedFile.length() / CHUNK_SIZE) + 1;
-        BufferedInputStream bis = null;
+        //BufferedInputStream bis = null;
+        RandomAccessFile bis = null;
         try {
-            bis = new BufferedInputStream(new FileInputStream(filename));
+            bis = new RandomAccessFile(filename, "r");
         } catch(Exception e) {
+            mutex.release();
             e.printStackTrace();
             System.out.println(e);
             System.exit(1);
@@ -77,6 +88,7 @@ public class P2PClientServerWorker implements Runnable {
             toPeerSimplified.write(INVALID_CHUNK_NUMBER_MESSAGE);
             toPeerSimplified.flush();
             System.out.println("Invalid chunk.");
+            mutex.release();
             return;
         }
 
@@ -84,7 +96,7 @@ public class P2PClientServerWorker implements Runnable {
         //System.out.println("Already here.");
         try {
             buffer = new byte[CHUNK_SIZE];
-            bis.skip((requestChunk-1)*CHUNK_SIZE);
+            bis.seek((requestChunk-1)*CHUNK_SIZE);
             int numberOfBytesRead = bis.read(buffer, 0, CHUNK_SIZE);
             if (numberOfBytesRead < 1) {
                 // Need to do something and inform peer.
@@ -95,6 +107,7 @@ public class P2PClientServerWorker implements Runnable {
                 toPeerSimplified.write("Chunk " + requestChunk + " of file "
                         + filename + " has been sent.");
                 toPeerSimplified.flush();
+                mutex.release();
                 return;
             }
         } catch (Exception e) {
@@ -102,6 +115,7 @@ public class P2PClientServerWorker implements Runnable {
             System.out.println(e);
             System.exit(1);
         } finally {
+            mutex.release();
             if(bis!=null){
                 try {
                     bis.close();

@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Arrays;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
@@ -30,6 +31,7 @@ public class P2PClientUser extends Thread {
     private static final String INVALID_USER_INPUT = "Invalid User Input. Please enter one number only.\n";
     private static final String INVALID_USER_INPUT_NUMBER = "Please enter number only.\n";
     private static final String INVALID_OPTION_NUMBER = "There is no such option number!\n";
+    private static final Hashtable mutexMapping = P2PClientMain.mutexMapping;
 
 
 
@@ -46,7 +48,7 @@ public class P2PClientUser extends Thread {
         try {
 //            clientRequestSocket = new Socket(InetAddress.getLocalHost(), SERVER_PORT);
 
-            clientRequestSocket = new Socket("172.25.97.81", SERVER_PORT);
+            clientRequestSocket = new Socket("172.25.106.54", SERVER_PORT);
             // Use toServer to send the request.
             toServer = new PrintWriter(clientRequestSocket.getOutputStream(), true);
             fromServer = new Scanner(clientRequestSocket.getInputStream());
@@ -380,6 +382,7 @@ public class P2PClientUser extends Thread {
                 if(fromServer.hasNextLine()) {
                     String replyFromServer = fromServer.nextLine();
                     System.out.println(replyFromServer);
+                    mutexMapping.put(fileName, new Semaphore(1));
                     break;
                 }
             }
