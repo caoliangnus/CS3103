@@ -71,6 +71,7 @@ public class P2PClientServerWorker implements Runnable {
             e.printStackTrace();
         }
 
+        filename = P2PClientUser.folderDirectory + File.separator +  filename;
         File requestedFile = new File(filename);
         int noOfChunksOfFile = (int) (requestedFile.length() / CHUNK_SIZE) + 1;
         //BufferedInputStream bis = null;
