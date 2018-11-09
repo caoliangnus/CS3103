@@ -29,6 +29,9 @@ public class DirectoryServerMain {
     public static final Semaphore entryListMutex = new Semaphore(1);
     public static final Semaphore hostNameListMutex = new Semaphore(1);
 
+
+
+
     private static ExecutorService threadPool;
 
     public static void main(String[] args) {
@@ -96,7 +99,7 @@ public class DirectoryServerMain {
                 mappingMutex.release();
             }else if(reply.equals(CONTROL_SOCKET_IDENTIFIER)) {
                 System.out.println("Control Socket.");
-                Worker requestToHandle = new Worker(connectionSocket);
+                Worker requestToHandle = new Worker(connectionSocket, hostName);
                 requestToHandle.start();
 //                threadPool.execute(requestToHandle);
             }else if(reply.equals(SIGNAL_SOCKET_IDENTIFIER)) {

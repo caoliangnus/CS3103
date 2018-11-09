@@ -2,6 +2,8 @@ package directoryServer;
 
 import static directoryServer.DirectoryServerMain.mappingMutex;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -43,6 +45,7 @@ public class Worker extends Thread {
 
     private Socket connectionSocket;
     private PrintWriter toClient;
+    private String hostName;
     private Semaphore fileNameListMutex = DirectoryServerMain.fileNameListMutex;
     private Semaphore entryListMutex = DirectoryServerMain.entryListMutex;
     private Semaphore hostNameListMutex = DirectoryServerMain.hostNameListMutex;
@@ -52,7 +55,8 @@ public class Worker extends Thread {
     private List<DataHostNameSocketPair> dataHostNameToSocketMapping = DirectoryServerMain.DataHostNameToSocketMapping;
     private List<SignalHostNameSocketPair> signalHostNameToSocketMapping = DirectoryServerMain.SignalHostNameToSocketMapping;
 
-    public Worker(Socket connectionSocket) {
+    public Worker(Socket connectionSocket, String hostName) {
+        this.hostName = hostName;
         this.connectionSocket = connectionSocket;
         try {
             toClient = new PrintWriter(connectionSocket.getOutputStream(), true);
@@ -397,7 +401,7 @@ public class Worker extends Thread {
     public void createDownloadThread(String downloaderHostName, String uploaderHostName, String fileName, String chunkNumber) {
         Socket uploaderDataSocket = null;
         Socket downloaderDataSocket = null;
-        Socket uploaderSignalSocket= null;
+        Socket uploaderSignalSocket = null;
 
 
         DataWorker dataWorker;
@@ -427,26 +431,64 @@ public class Worker extends Thread {
             }
         }
 
-        System.out.println("UploaderDataSocket: " + uploaderDataSocket +
-                " downloaderDataSocket: " + downloaderDataSocket +
-                " uploaderSingalSocket: " + uploaderSignalSocket);
 
+
+        System.out.println("Thread ID: " + this.getId() + " Downloader name: " + downloaderHostName);
+
+//        try {
+//            relayChunk(downloaderHostName, uploaderDataSocket, downloaderDataSocket, uploaderSignalSocket, fileName, requestChunk);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
 
 
         try {
-            dataWorker = new DataWorker(uploaderDataSocket,downloaderDataSocket,uploaderSignalSocket, fileName, requestChunk);
-            dataWorker.start();
-            System.out.println("Data worker Done");
-
-            System.out.println("Semaphore: " + entryListMutex.availablePermits());
-            System.out.println("HostList: "+ hostNameListMutex.availablePermits());
-            System.out.println("ID: " + this.getId());
-
+            dataWorker = new DataWorker(downloaderHostName, uploaderDataSocket,downloaderDataSocket,uploaderSignalSocket, fileName, requestChunk);
+            dataWorker.relayChunk();
         } catch (IOException e) {
             e.printStackTrace();
         }
 
     }
+
+    public static final int CHUNK_SIZE = 1024;
+    public static final String GET_COMMAND = "GET";
+
+    public void relayChunk(String downloaderHostName, Socket uploadDataSocket, Socket downloadDataSocket, Socket uploadSignalSocket ,String fileName, int chunkNum) throws IOException {
+
+       BufferedInputStream DatafromUploaderSocket;
+       PrintWriter SignaltoUploaderSocket;
+       BufferedOutputStream relayToDownloaderSocket;
+
+        DatafromUploaderSocket = new BufferedInputStream(uploadDataSocket.getInputStream());
+        relayToDownloaderSocket = new BufferedOutputStream(downloadDataSocket.getOutputStream());
+        SignaltoUploaderSocket = new PrintWriter(uploadSignalSocket.getOutputStream(),true);
+
+        // Buffer to store chunk
+        byte[] buffer = new byte[CHUNK_SIZE];
+
+        // Download chunk from uploader
+        String clientRequest = GET_COMMAND + " " + fileName + " " + chunkNum + "\n";
+        SignaltoUploaderSocket.write(clientRequest);
+        SignaltoUploaderSocket.flush();
+
+        // Relay chunk to downloader
+        int size = DatafromUploaderSocket.read(buffer, 0, CHUNK_SIZE);
+
+        String content = new String(buffer);
+        System.out.println("UploaderDataSocket: " + uploadDataSocket +
+                " downloaderDataSocket: " + downloadDataSocket +
+                " uploaderSingalSocket: " + uploadSignalSocket);
+
+        System.out.println("Name: " + downloaderHostName +" Chunk No: " + chunkNum + " \n" + content);
+
+        System.out.println();
+
+        relayToDownloaderSocket.write(buffer, 0, size);
+        relayToDownloaderSocket.flush();
+
+    }
+
 
     public void returnTotalChunkNumber(String filename) {
 
@@ -510,6 +552,9 @@ public class Worker extends Thread {
 
     @Override
     public void run() {
+
+        System.out.println("Thread ID: "+  this.getId() + " HostName: " + hostName);
+
         handleRequest();
 
         System.out.println("Run finished");
