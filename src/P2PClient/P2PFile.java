@@ -71,32 +71,6 @@ public class P2PFile {
         }
     }
 
-    public void flush() {
-        //If equal to null, return
-        if (chunks.get(counter) == null) {
-            return;
-        }
-
-        for (int i = counter; i < numberOfChunks; i++) {
-            if (chunks.get(counter) != null) {
-                copyToFile(i);
-                counter++;
-            } else {
-                break;
-            }
-        }
-    }
-
-    public List<Integer> getChunksThatAreNotDownloaded() {
-        List<Integer> list = new ArrayList<>();
-        for(int i=1; i<=numberOfChunks; i++){
-            if(!chunks.containsKey(i)){
-                list.add(i);
-            }
-        }
-        return list;
-    }
-
     private void copyToFile(int index) {
 
         byte[] dataToWrite = chunks.get(index);
@@ -114,8 +88,6 @@ public class P2PFile {
             }
         }
 
-        System.out.println("Bytes Read Size: " + numberOfBytesToRead);
-
         // Write the data into the file
         try {
             bos.write(dataToWrite, 0, numberOfBytesToRead);
@@ -128,7 +100,7 @@ public class P2PFile {
     }
 
     public boolean writeToFile() {
-        System.out.println("Writing to file: " + filename + "Total Chunk No: " + chunks.size());
+        System.out.println("Writing to file: " + filename);
         System.out.println("Location: " + (P2PClientUser.folderDirectory + File.separator +  filename));
         System.out.println();
         Set<Integer> keySet = chunks.keySet();

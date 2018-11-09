@@ -19,12 +19,12 @@ public class Worker implements Runnable {
     private static final String FILE_FOUND_MESSAGE = "201 There is such a file.\n";
     private static final String EXIT_SUCCESSFUL_MESSAGE = "202 Exit is successful. " +
             "Data about user has been completely removed from directory server.\n";
-    private static final String UPDATE_SUCCESSFUL_MESSAGE = "203 Advertisement is updated\n";
+    private static final String UPDATE_SUCCESSFUL_MESSAGE = "203 Directory is successfully updated\n";
 
     // List of error code and message to return
     private static final String INVALID_COMMAND_MESSAGE = "404 There is no such command.\n";
     private static final String FILE_NOT_PRESENT_MESSAGE = "403 There is no such file.\n";
-    private static final String INVALID_FORMAT_IP_ADDRESS_MESSAGE = "405 IP Address given is not of valid format.\n";
+    private static final String INVALID_FORMAT_IP_ADDRESS_MESSAGE = "405 IP Address given is not of a valid format.\n";
     private static final String INVALID_FILE_TYPE_MESSAGE = "406 File type advertising is not supported, " +
             "please choose a .txt file.\n";
     private static final String INVALID_CHUNK_NUMBER_MESSAGE = "408 Chunk number given is invalid, " +
@@ -108,12 +108,13 @@ public class Worker implements Runnable {
         boolean doesChunkExist = false;
 
         // Check if chunkNum is a valid positive number than one or more
-        if(Integer.parseInt(chunkNum)<1){
+        if(Integer.parseInt(chunkNum) < 1){
             toClient.write(INVALID_CHUNK_NUMBER_MESSAGE);
             toClient.flush();
             return;
         }
 
+        // Check if the file requested exists in the directory.
         List<Entry> listOfEntries = entryList.get(filename);
         if (listOfEntries == null) {
             toClient.write(FILE_NOT_PRESENT_MESSAGE);
@@ -128,9 +129,11 @@ public class Worker implements Runnable {
 
         //extract list of ip addresses which have this chunk
         List<String> chunkList = new ArrayList<>();
-        for(int k=0;k<listOfEntries.size();k++){
-            if(listOfEntries.get(k).getChunkNumber() == chunkNumber){
-                chunkList.add(listOfEntries.get(k).getAddress());
+        Iterator<Entry> itr = listOfEntries.iterator();
+        while(itr.hasNext()) {
+            Entry entry = itr.next();
+            if(entry.getChunkNumber() == chunkNumber) {
+                chunkList.add(entry.getAddress());
             }
         }
 
@@ -188,10 +191,10 @@ public class Worker implements Runnable {
                 if(entry.getAddress().equals(IPAddress)){
                     iterator.remove();
 
-                    // I am not sure if we should do it this way
-                    // We can have a flag to prevent all the extra looping
-                    FilePair temp = new FilePair(filename, 0);
+                    // If list is empty, it means there is no one available to
+                    // provide chunks for this file. Remove from fileNameList.
                     if(list.size() == 0){
+                        FilePair temp = new FilePair(filename, 0);
                         fileNameList.remove(temp);
                     }
                 }
@@ -225,6 +228,8 @@ public class Worker implements Runnable {
             for (FilePair entry : fileNameList) {
                 resultString.append(counter++ + ". " + entry + "\n");
             }
+
+            // Use EOF to tell Client when the end of list is encountered.
             resultString.append("EOF\n");
             String result = resultString.toString();
             toClient.write(result);
@@ -251,7 +256,7 @@ public class Worker implements Runnable {
         }
 
         //Check if chunkNum is a valid positive number than is one or more
-        if(Integer.parseInt(chunkNum)<1){
+        if(Integer.parseInt(chunkNum) < 1){
             toClient.write(INVALID_CHUNK_NUMBER_MESSAGE);
             toClient.flush();
             return;
@@ -263,8 +268,7 @@ public class Worker implements Runnable {
             fileNameList.add(temp);
             fileExisted = false;
         }
-        //Update entry table (Subject to discussion, for now i just assume the client will advertise when he get the
-        //whole file)
+
         if(!fileExisted){
             ArrayList<Entry> entries = new ArrayList<>();
             for(int i =0;i<Integer.parseInt(chunkNum);i++){
@@ -272,8 +276,20 @@ public class Worker implements Runnable {
             }
             entryList.put(fileName, entries);
         }else {
-            //Check if this file was advertised by this host earlier, if yes then don't add duplicate entries
-            if(entryList.get(fileName).get(0).getAddress().equals(ip)){
+            //Check if this file was advertised by this host earlier, if yes, then don't add duplicate entries
+
+            boolean hasBeenAdvertised = false;
+
+            Iterator<Entry> itrOfEntries = entryList.get(fileName).iterator();
+            while(itrOfEntries.hasNext()) {
+                Entry entry = itrOfEntries.next();
+                if(entry.getAddress().equals(ip)) {
+                    hasBeenAdvertised = true;
+                    break;
+                }
+            }
+
+            if(hasBeenAdvertised){
                 System.out.println(fileName + " has been advertised earlier. ");
             }else {
                 for (int j = 0; j < Integer.parseInt(chunkNum); j++) {
@@ -301,7 +317,7 @@ public class Worker implements Runnable {
                 int totalChunkNumber = pair.getTotalChunkNumber();
                 String reply = totalChunkNumber + "\n";
 
-                // For now we just return the number only
+                // Simple return the number
                 toClient.write(reply);
                 toClient.flush();
                 return;

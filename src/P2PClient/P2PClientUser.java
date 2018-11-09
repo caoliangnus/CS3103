@@ -289,7 +289,6 @@ public class P2PClientUser extends Thread {
         String IPReply = "";
 
         while(!fileToDownload.hasCompleted()) {
-//        System.out.println("infinite?");
             // Check for any chunks that is available for downloading
             for (int i = 0; i < numberOfChunks; i++) {
                 //status = map.getAndSet(i,0);
@@ -306,22 +305,16 @@ public class P2PClientUser extends Thread {
                     mapMutex.release();
                     // Obtain a list of IP address to download from
                     String IPRequest = DOWNLOAD_COMMAND + " " + filename + " " + (i + 1) + "\n";
-//                    System.out.println("chunk: " + i);
                     toServer.write(IPRequest);
                     toServer.flush();
 
                     while (true) {
-                        //System.out.println("Here");
                         if (fromServer.hasNextLine()) {
                             IPReply = fromServer.nextLine();
                             break;
                         }
                     }
-//                    System.out.println(threadPool.isShutdown());
                     String[] splitAddress = IPReply.split(",");
-
-//                    P2PClientUserWorker worker = new P2PClientUserWorker(i, fileToDownload, splitAddress, tempMap);
-//                    worker.start();
                     threadPool.execute(new P2PClientUserWorker(i, fileToDownload, splitAddress, tempMap));
                 }else{
                     mapMutex.release();

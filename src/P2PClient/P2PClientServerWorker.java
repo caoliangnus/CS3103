@@ -60,7 +60,6 @@ public class P2PClientServerWorker implements Runnable {
 
         String filename = splitRequest[1];
         int requestChunk = Integer.parseInt(splitRequest[2]);
-        System.out.println("Requester IP: " + peerSocket.getRemoteSocketAddress() + ", File Name: " + filename + ", Chunk Requested: " + requestChunk);
         byte[] buffer;
         File requestedFile = new File(filename);
         int noOfChunksOfFile = (int) (requestedFile.length() / CHUNK_SIZE) + 1;
