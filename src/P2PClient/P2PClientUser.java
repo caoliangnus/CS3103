@@ -48,8 +48,8 @@ public class P2PClientUser extends Thread {
 
     private static String userName = "";
 
-    private static String ip = "167.99.68.246";
-//    private static String ip = "172.25.102.18";
+    private static String ip = "104.248.153.253";
+//    private static String ip = "172.25.106.54";
 
     private void handleUser() {
         try {
@@ -402,14 +402,19 @@ public class P2PClientUser extends Thread {
 
                 String clientRequest = DOWNLOAD_COMMAND + " " + userName + " " + hostNames[0] + " " + fileToDownload.getFileName() + " " + chunkToDownload + "\n";
 
+                System.out.println(userName + " Requesting: " + fileToDownload.getFileName() + "#" +chunkToDownload);
+
                 toServer.write(clientRequest);
                 toServer.flush();
 
                 int size = dataFromTracker.read(buffer, 0, CHUNK_SIZE);
 //                    System.out.println("Chunk: " + chunkToDownload + " SIZE " + size);
 
+                System.out.println("Size is: " + size);
                 if (size >= 0) {
                     fileToDownload.setChunk(chunkToDownload-1, buffer);
+                    System.out.println("Chunk: " + chunkToDownload + " SIZE " + size);
+
                     return;
                 } else {
                     continue;

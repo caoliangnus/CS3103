@@ -8,14 +8,14 @@ import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.Semaphore;
 
-public class Worker implements Runnable {
+public class Worker extends Thread {
 
     // List of commands
     private static final String LIST_COMMAND = "LIST";
     private static final String QUERY_COMMAND = "FIND";
     private static final String EXIT_COMMAND = "EXIT";
     private static final String INFORM_COMMAND = "INFORM";
-    private static final String RETURN_SERVER_IP_COMMAND= "RETRIEVE";
+    private static final String RETURN_HOST_NAMES_IP_COMMAND= "RETRIEVE";
     private static final String DOWNLOAD_COMMAND = "GET";
     private static final String CHUNK_COMMAND = "CHUNK";
 
@@ -43,9 +43,9 @@ public class Worker implements Runnable {
 
     private Socket connectionSocket;
     private PrintWriter toClient;
-    private Semaphore fileNameListMutex = new Semaphore(1);
-    private Semaphore entryListMutex = new Semaphore(1);
-    private Semaphore hostNameListMutex = new Semaphore(1);
+    private Semaphore fileNameListMutex = DirectoryServerMain.fileNameListMutex;
+    private Semaphore entryListMutex = DirectoryServerMain.entryListMutex;
+    private Semaphore hostNameListMutex = DirectoryServerMain.hostNameListMutex;
     private List<FilePair> fileNameList = DirectoryServerMain.fileNameList;
     private List<String> hostNameList = DirectoryServerMain.hostNameList;
     private Hashtable<String, ArrayList<Entry>> entryList = DirectoryServerMain.entryList;
@@ -92,7 +92,7 @@ public class Worker implements Runnable {
                     case INFORM_COMMAND:
                         updateDirectory(splitRequest[1], splitRequest[2], splitRequest[3]);
                         break;
-                    case RETURN_SERVER_IP_COMMAND:
+                    case RETURN_HOST_NAMES_IP_COMMAND:
                         returnHostNamesForFile(splitRequest[1], splitRequest[2]);
                         break;
                     case EXIT_COMMAND:
@@ -119,7 +119,7 @@ public class Worker implements Runnable {
     }
 
 
-    private synchronized void returnHostNamesForFile(String filename, String chunkNum) {
+    private void returnHostNamesForFile(String filename, String chunkNum) {
         boolean doesChunkExist = false;
 
         System.out.println("Name: " + filename + " Chunk #: " + chunkNum);
@@ -199,7 +199,7 @@ public class Worker implements Runnable {
         entryList.set(randomIndex, tempEntry);
     }
 
-    private synchronized void initializeClientExit(String hostName) {
+    private void initializeClientExit(String hostName) {
         try {
             entryListMutex.acquire();
         } catch (InterruptedException e) {
@@ -258,7 +258,7 @@ public class Worker implements Runnable {
         toClient.flush();
     }
 
-    private synchronized void searchForFile(String filename) {
+    private void searchForFile(String filename) {
         FilePair temp = new FilePair(filename, 0);
         try {
             fileNameListMutex.acquire();
@@ -276,7 +276,7 @@ public class Worker implements Runnable {
         fileNameListMutex.release();
     }
 
-    private synchronized void sendListOfAvailableFiles() {
+    private void sendListOfAvailableFiles() {
 
         try {
             fileNameListMutex.acquire();
@@ -304,7 +304,7 @@ public class Worker implements Runnable {
         fileNameListMutex.release();
     }
 
-    private synchronized void updateDirectory (String fileName, String chunkNum, String hostName){
+    private void updateDirectory (String fileName, String chunkNum, String hostName){
 
         boolean fileExisted = true;
 
@@ -412,11 +412,6 @@ public class Worker implements Runnable {
 
             if(dataIPPair.getHostName().equals(uploaderHostName)){
                 uploaderDataSocket = dataIPPair.getSocket();
-                if (uploaderDataSocket == null) {
-                    System.out.println("NULL");
-                } else {
-                    System.out.println("YES");
-                }
             }
 
         }
@@ -427,10 +422,21 @@ public class Worker implements Runnable {
             }
         }
 
+        System.out.println("UploaderDataSocket: " + uploaderDataSocket +
+                " downloaderDataSocket: " + downloaderDataSocket +
+                " uploaderSingalSocket: " + uploaderSignalSocket);
+
+
+
         try {
             dataWorker = new DataWorker(uploaderDataSocket,downloaderDataSocket,uploaderSignalSocket, fileName, requestChunk);
             dataWorker.start();
             System.out.println("Data worker Done");
+
+            System.out.println("Semaphore: " + entryListMutex.availablePermits());
+            System.out.println("HostList: "+ hostNameListMutex.availablePermits());
+            System.out.println("ID: " + this.getId());
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -500,6 +506,8 @@ public class Worker implements Runnable {
     @Override
     public void run() {
         handleRequest();
+
+        System.out.println("Run finished");
         try {
             // Close connection socket before this thread finishes its work
             connectionSocket.close();

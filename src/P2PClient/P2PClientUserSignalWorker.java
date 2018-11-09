@@ -95,7 +95,7 @@ public class P2PClientUserSignalWorker extends Thread {
                     P2PClientUser.dataToTracker.write(buffer, 0, numberOfBytesRead);
                     P2PClientUser.dataToTracker.flush();
                     toPeerSimplified.write("Chunk " + requestChunk + " of file "
-                            + filename + " has been sent.");
+                            + filename + " has been sent.\n");
                     toPeerSimplified.flush();
                 }
             } catch (Exception e) {

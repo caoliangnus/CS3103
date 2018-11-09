@@ -55,6 +55,7 @@ public class ResolveHostNameWorker extends Thread{
                 toClient.write("AVAILABLE\n");
                 toClient.flush();
                 hostNameList.add(requestedHostName);
+                System.out.println(requestedHostName + "Joined " + connectionSocket.getRemoteSocketAddress());
                 toClient.close();
                 fromClient.close();
                 break;

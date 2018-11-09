@@ -25,6 +25,9 @@ public class DirectoryServerMain {
     public static final List<SignalHostNameSocketPair> SignalHostNameToSocketMapping = new ArrayList<>();
     public static final List<String> hostNameList = new ArrayList<>();
     public static final Semaphore mappingMutex = new Semaphore(1);
+    public static final Semaphore fileNameListMutex = new Semaphore(1);
+    public static final Semaphore entryListMutex = new Semaphore(1);
+    public static final Semaphore hostNameListMutex = new Semaphore(1);
 
     private static ExecutorService threadPool;
 
@@ -94,7 +97,8 @@ public class DirectoryServerMain {
             }else if(reply.equals(CONTROL_SOCKET_IDENTIFIER)) {
                 System.out.println("Control Socket.");
                 Worker requestToHandle = new Worker(connectionSocket);
-                threadPool.execute(requestToHandle);
+                requestToHandle.start();
+//                threadPool.execute(requestToHandle);
             }else if(reply.equals(SIGNAL_SOCKET_IDENTIFIER)) {
                 System.out.println("Signal Socket.");
                 SignalHostNameSocketPair signalMapping = new SignalHostNameSocketPair(hostName, connectionSocket);
