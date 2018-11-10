@@ -5,8 +5,9 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.concurrent.Semaphore;
 
-public class DataWorker extends Thread {
+public class DataWorker {
 
     public static final int CHUNK_SIZE = 1024;
     public static final String GET_COMMAND = "GET";
@@ -18,10 +19,12 @@ public class DataWorker extends Thread {
     private BufferedInputStream DatafromUploaderSocket;
     private PrintWriter SignaltoUploaderSocket;
     private BufferedOutputStream relayToDownloaderSocket;
+    private String downloaderHostName;
 
 
-    public DataWorker (Socket uploadDataSocket, Socket downloadDataSocket, Socket uploadSignalSocket ,String fileName, int chunkNum) throws IOException {
+    public DataWorker (String downloaderHostName, Socket uploadDataSocket, Socket downloadDataSocket, Socket uploadSignalSocket ,String fileName, int chunkNum) throws IOException {
 
+        this.downloaderHostName = downloaderHostName;
         this.uploaderDataSocket = uploadDataSocket;
         this.downloaderDataSocket = downloadDataSocket;
         this.uploaderSignalSocket = uploadSignalSocket;
@@ -33,8 +36,16 @@ public class DataWorker extends Thread {
 
     }
 
+    public static final Semaphore threadListMutex = new Semaphore(1);
 
-    public void relayChunk() throws IOException {
+
+    public  void relayChunk() throws IOException {
+
+        try {
+            threadListMutex.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
         // Buffer to store chunk
         byte[] buffer = new byte[CHUNK_SIZE];
@@ -46,8 +57,19 @@ public class DataWorker extends Thread {
 
         // Relay chunk to downloader
         int size = DatafromUploaderSocket.read(buffer, 0, CHUNK_SIZE);
+
+        String content = new String(buffer);
+        System.out.println("UploaderDataSocket: " + uploaderDataSocket +
+                " downloaderDataSocket: " + downloaderDataSocket +
+                " uploaderSingalSocket: " + uploaderSignalSocket);
+        System.out.println("Name: " + downloaderHostName +" Chunk No: " + chunkNum + " \n" + content);
+
+        System.out.println();
+
         relayToDownloaderSocket.write(buffer, 0, size);
         relayToDownloaderSocket.flush();
+
+        threadListMutex.release();
 
     }
 
