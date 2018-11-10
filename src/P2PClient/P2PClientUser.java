@@ -48,11 +48,17 @@ public class P2PClientUser extends Thread {
 
     private static String userName = "";
 
-    //private static String ip = "104.248.153.253";
-    private static String ip = "172.25.106.54";
+
 
     private void handleUser() {
         try {
+
+            //Ask IP
+            System.out.println("Please enter Server IP: ");
+            String ip = input.nextLine().trim();
+
+//           ip = "104.248.153.253";
+//           ip = "172.25.106.54";
 
             // First, establish a username.
             String tempUserName = "";
@@ -87,7 +93,7 @@ public class P2PClientUser extends Thread {
                     }
                 }
 
-                System.out.println(replyFromServer);
+//                System.out.println(replyFromServer);
 //                String replyFromServer = initializationFromServer.nextLine();
                 initializationToServer.flush();
                 if (replyFromServer.equals("AVAILABLE")) {
