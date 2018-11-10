@@ -3,6 +3,7 @@ package P2PClient;
 import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
+import java.util.concurrent.Semaphore;
 
 public class P2PClientServerWorker implements Runnable {
 

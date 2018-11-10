@@ -48,8 +48,8 @@ public class P2PClientUser extends Thread {
 
     private static String userName = "";
 
-    private static String ip = "104.248.153.253";
-//    private static String ip = "172.25.106.54";
+    //private static String ip = "104.248.153.253";
+    private static String ip = "172.25.106.54";
 
     private void handleUser() {
         try {
@@ -474,6 +474,7 @@ public class P2PClientUser extends Thread {
                 if(fromServer.hasNextLine()) {
                     String replyFromServer = fromServer.nextLine();
                     System.out.println(replyFromServer);
+                    P2PClientMain.mutexMapping.put(fileName, new Semaphore(1));
                     break;
                 }
             }

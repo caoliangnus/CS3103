@@ -1,6 +1,12 @@
 package P2PClient;
 
+import java.util.Hashtable;
+import java.util.concurrent.Semaphore;
+
 public class P2PClientMain {
+
+    public static Hashtable<String, Semaphore> mutexMapping = new Hashtable<>();
+
     public static void main(String args[]) {
 
         // Entry point for the client.

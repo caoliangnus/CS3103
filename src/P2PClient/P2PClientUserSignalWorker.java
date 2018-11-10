@@ -3,6 +3,7 @@ package P2PClient;
 import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
+import java.util.concurrent.Semaphore;
 
 public class P2PClientUserSignalWorker extends Thread {
 
@@ -64,14 +65,21 @@ public class P2PClientUserSignalWorker extends Thread {
 //            System.out.println("Requester IP: " + signalSocket.getRemoteSocketAddress() + ", File Name: " + filename + ", Chunk Requested: " + requestChunk);
 
             byte[] buffer;
+            Semaphore mutex = P2PClientMain.mutexMapping.get(filename);
+            try {
+                mutex.acquire();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             File requestedFile = new File(P2PClientUser.folderDirectory + File.separator + filename);
             int noOfChunksOfFile = (int) (requestedFile.length() / CHUNK_SIZE) + 1;
-            BufferedInputStream bis = null;
+            RandomAccessFile bis = null;
             try {
-                bis = new BufferedInputStream(new FileInputStream(P2PClientUser.folderDirectory + File.separator + filename));
+                bis = new RandomAccessFile(P2PClientUser.folderDirectory + File.separator + filename, "r");
             } catch(Exception e) {
                 e.printStackTrace();
                 System.out.println(e);
+                mutex.release();
                 System.exit(1);
             }
 
@@ -79,6 +87,7 @@ public class P2PClientUserSignalWorker extends Thread {
                 toPeerSimplified.write(INVALID_CHUNK_NUMBER_MESSAGE);
                 toPeerSimplified.flush();
                 System.out.println("Invalid chunk." + " " + requestChunk + " " + noOfChunksOfFile);
+                mutex.release();
                 return;
             }
 
@@ -86,8 +95,10 @@ public class P2PClientUserSignalWorker extends Thread {
             //System.out.println("Already here.");
             try {
                 buffer = new byte[CHUNK_SIZE];
-                bis.skip((requestChunk-1)*CHUNK_SIZE);
+                bis.seek((requestChunk-1)*CHUNK_SIZE);
                 int numberOfBytesRead = bis.read(buffer, 0, CHUNK_SIZE);
+                System.out.println("Chunk number: " + requestChunk);
+                System.out.println(new String(buffer));
                 if (numberOfBytesRead < 1) {
                     // Need to do something and inform peer.
                 }else {
@@ -103,6 +114,7 @@ public class P2PClientUserSignalWorker extends Thread {
                 System.out.println(e);
                 System.exit(1);
             } finally {
+                mutex.release();
                 if(bis!=null){
                     try {
                         bis.close();
