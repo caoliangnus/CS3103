@@ -54,8 +54,18 @@ public class P2PClientUser extends Thread {
         try {
 
             //Ask IP
-            System.out.println("Please enter Server IP: ");
-            String ip = input.nextLine().trim();
+            String ip = "";
+            while (true) {
+                System.out.println("Please enter Server IP: ");
+                ip = input.nextLine().trim();
+
+                if (!validIP(ip)) {
+                    System.out.println("Invalid IP");
+                } else {
+                    break;
+                }
+            }
+            
 
 //           ip = "104.248.153.253";
 //           ip = "172.25.106.54";
@@ -556,6 +566,33 @@ public class P2PClientUser extends Thread {
                 System.out.println(replyFromServer);
                 break;
             }
+        }
+    }
+
+    public boolean validIP (String ip) {
+        try {
+            if ( ip == null || ip.isEmpty() ) {
+                return false;
+            }
+
+            String[] parts = ip.split( "\\." );
+            if ( parts.length != 4 ) {
+                return false;
+            }
+
+            for ( String s : parts ) {
+                int i = Integer.parseInt( s );
+                if ( (i < 0) || (i > 255) ) {
+                    return false;
+                }
+            }
+            if ( ip.endsWith(".") ) {
+                return false;
+            }
+
+            return true;
+        } catch (NumberFormatException nfe) {
+            return false;
         }
     }
 
