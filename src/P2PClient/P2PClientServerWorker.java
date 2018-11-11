@@ -22,7 +22,7 @@ public class P2PClientServerWorker implements Runnable {
 
     public P2PClientServerWorker(Socket peerSocket) {
         this.peerSocket = peerSocket;
-        //System.out.println("Inside P2PClientServerWorker constructor");
+
         try {
             fromPeer = new Scanner(this.peerSocket.getInputStream());
             toPeer = new BufferedOutputStream(this.peerSocket.getOutputStream());
@@ -36,7 +36,7 @@ public class P2PClientServerWorker implements Runnable {
 
     private void processPeerFileDownloadRequest() {
         String request;
-        //System.out.println("Inside processPeerFileDownloadRequest");
+
         while(true) {
             if (fromPeer.hasNextLine()) {
                 request = fromPeer.nextLine();
@@ -80,16 +80,13 @@ public class P2PClientServerWorker implements Runnable {
             return;
         }
 
-        //System.out.println(requestChunk);
-        //System.out.println("Already here.");
         try {
             buffer = new byte[CHUNK_SIZE];
             bis.skip((requestChunk-1)*CHUNK_SIZE);
             int numberOfBytesRead = bis.read(buffer, 0, CHUNK_SIZE);
             if (numberOfBytesRead < 1) {
-                // Need to do something and inform peer.
+
             }else {
-                //System.out.println(numberOfBytesRead);
                 toPeer.write(buffer, 0, numberOfBytesRead);
                 toPeer.flush();
                 toPeerSimplified.write("Chunk " + requestChunk + " of file "

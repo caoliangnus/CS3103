@@ -21,7 +21,7 @@ public class P2PClientUserSignalWorker extends Thread {
 
     public P2PClientUserSignalWorker(Socket signalSocket) {
         this.signalSocket = signalSocket;
-        //System.out.println("Inside P2PClientServerWorker constructor");
+
         try {
             fromTracker = new Scanner(this.signalSocket.getInputStream());
             toTracker = new BufferedOutputStream(this.signalSocket.getOutputStream());
@@ -37,7 +37,7 @@ public class P2PClientUserSignalWorker extends Thread {
 
         while (true) {
             String request;
-            //System.out.println("Inside processPeerFileDownloadRequest");
+
             while(true) {
                 if (fromTracker.hasNextLine()) {
                     request = fromTracker.nextLine();
@@ -62,7 +62,6 @@ public class P2PClientUserSignalWorker extends Thread {
 
             String filename = splitRequest[1];
             int requestChunk = Integer.parseInt(splitRequest[2]);
-//            System.out.println("Requester IP: " + signalSocket.getRemoteSocketAddress() + ", File Name: " + filename + ", Chunk Requested: " + requestChunk);
 
             byte[] buffer;
             Semaphore mutex = P2PClientMain.mutexMapping.get(filename);
@@ -91,8 +90,6 @@ public class P2PClientUserSignalWorker extends Thread {
                 return;
             }
 
-            //System.out.println(requestChunk);
-            //System.out.println("Already here.");
             try {
                 buffer = new byte[CHUNK_SIZE];
                 bis.seek((requestChunk-1)*CHUNK_SIZE);
@@ -100,9 +97,9 @@ public class P2PClientUserSignalWorker extends Thread {
                 System.out.println("Chunk number: " + requestChunk);
                 System.out.println(new String(buffer));
                 if (numberOfBytesRead < 1) {
-                    // Need to do something and inform peer.
+
                 }else {
-                    //Liang: Data Socket to send data
+
                     P2PClientUser.dataToTracker.write(buffer, 0, numberOfBytesRead);
                     P2PClientUser.dataToTracker.flush();
                     toPeerSimplified.write("Chunk " + requestChunk + " of file "
