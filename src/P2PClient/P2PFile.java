@@ -14,7 +14,6 @@ public class P2PFile {
     private TreeMap<Integer, byte[]> chunks;
 
     private int numberOfChunks;
-    private int counter = 0;
 
     public P2PFile(String filename, int numberOfChunks) {
         this.filename = filename;
