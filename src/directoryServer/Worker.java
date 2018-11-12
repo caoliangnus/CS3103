@@ -2,8 +2,6 @@ package directoryServer;
 
 import static directoryServer.DirectoryServerMain.mappingMutex;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -31,7 +29,6 @@ public class Worker extends Thread {
     // List of error code and message to return
     private static final String INVALID_COMMAND_MESSAGE = "404 There is no such command.\n";
     private static final String FILE_NOT_PRESENT_MESSAGE = "403 There is no such file.\n";
-    private static final String INVALID_FORMAT_IP_ADDRESS_MESSAGE = "405 IP Address given is not of valid format.\n";
     private static final String INVALID_FILE_TYPE_MESSAGE = "406 File type advertising is not supported, " +
             "please choose a .txt file.\n";
     private static final String INVALID_CHUNK_NUMBER_MESSAGE = "408 Chunk number given is invalid, " +
@@ -223,8 +220,6 @@ public class Worker extends Thread {
                 if(entry.getHostName().equals(hostName)){
                     iterator.remove();
 
-                    // I am not sure if we should do it this way
-                    // We can have a flag to prevent all the extra looping
                     FilePair temp = new FilePair(filename, 0);
                     if(list.size() == 0){
                         try {
@@ -435,13 +430,6 @@ public class Worker extends Thread {
 
         System.out.println("Thread ID: " + this.getId() + " Downloader name: " + downloaderHostName);
 
-//        try {
-//            relayChunk(downloaderHostName, uploaderDataSocket, downloaderDataSocket, uploaderSignalSocket, fileName, requestChunk);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-
-
         try {
             dataWorker = new DataWorker(downloaderHostName, uploaderDataSocket,downloaderDataSocket,uploaderSignalSocket, fileName, requestChunk);
             dataWorker.relayChunk();
@@ -450,45 +438,6 @@ public class Worker extends Thread {
         }
 
     }
-
-    public static final int CHUNK_SIZE = 1024;
-    public static final String GET_COMMAND = "GET";
-
-    public void relayChunk(String downloaderHostName, Socket uploadDataSocket, Socket downloadDataSocket, Socket uploadSignalSocket ,String fileName, int chunkNum) throws IOException {
-
-       BufferedInputStream DatafromUploaderSocket;
-       PrintWriter SignaltoUploaderSocket;
-       BufferedOutputStream relayToDownloaderSocket;
-
-        DatafromUploaderSocket = new BufferedInputStream(uploadDataSocket.getInputStream());
-        relayToDownloaderSocket = new BufferedOutputStream(downloadDataSocket.getOutputStream());
-        SignaltoUploaderSocket = new PrintWriter(uploadSignalSocket.getOutputStream(),true);
-
-        // Buffer to store chunk
-        byte[] buffer = new byte[CHUNK_SIZE];
-
-        // Download chunk from uploader
-        String clientRequest = GET_COMMAND + " " + fileName + " " + chunkNum + "\n";
-        SignaltoUploaderSocket.write(clientRequest);
-        SignaltoUploaderSocket.flush();
-
-        // Relay chunk to downloader
-        int size = DatafromUploaderSocket.read(buffer, 0, CHUNK_SIZE);
-
-        String content = new String(buffer);
-        System.out.println("UploaderDataSocket: " + uploadDataSocket +
-                " downloaderDataSocket: " + downloadDataSocket +
-                " uploaderSingalSocket: " + uploadSignalSocket);
-
-        System.out.println("Name: " + downloaderHostName +" Chunk No: " + chunkNum + " \n" + content);
-
-        System.out.println();
-
-        relayToDownloaderSocket.write(buffer, 0, size);
-        relayToDownloaderSocket.flush();
-
-    }
-
 
     public void returnTotalChunkNumber(String filename) {
 
@@ -522,8 +471,6 @@ public class Worker extends Thread {
         }
 
     }
-
-
 
     @Override
     public void run() {

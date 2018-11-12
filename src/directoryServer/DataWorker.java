@@ -73,14 +73,4 @@ public class DataWorker {
 
     }
 
-    public void run() {
-
-        try {
-            relayChunk();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-    }
-
 }

@@ -76,8 +76,6 @@ public class DirectoryServerMain {
                 }
             }
 
-
-//            String replyFromClient = fromClient.nextLine();
             String[] splitReply = replyFromClient.split("\\s+");
             String reply = splitReply[0];
 
@@ -101,7 +99,7 @@ public class DirectoryServerMain {
                 System.out.println("Control Socket.");
                 Worker requestToHandle = new Worker(connectionSocket, hostName);
                 requestToHandle.start();
-//                threadPool.execute(requestToHandle);
+
             }else if(reply.equals(SIGNAL_SOCKET_IDENTIFIER)) {
                 System.out.println("Signal Socket.");
                 SignalHostNameSocketPair signalMapping = new SignalHostNameSocketPair(hostName, connectionSocket);

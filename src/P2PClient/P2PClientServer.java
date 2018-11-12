@@ -24,7 +24,6 @@ public class P2PClientServer extends Thread {
             System.out.println(e);
             System.exit(1);
         }
-        int counter = 1;
         while(true) {
             try {
                 connectionSocket = listeningSocket.accept();
@@ -35,7 +34,6 @@ public class P2PClientServer extends Thread {
                 System.exit(1);
             }
 
-            //System.out.println("Connected: " + connectionSocket.getRemoteSocketAddress());
             P2PClientServerWorker requestToHandle = new P2PClientServerWorker(connectionSocket);
             threadPool.execute(requestToHandle);
         }

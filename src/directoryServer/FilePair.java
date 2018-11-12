@@ -1,7 +1,5 @@
 package directoryServer;
 
-import java.util.Objects;
-
 public class FilePair {
     private String filename;
     private int totalChunkNumber;

@@ -14,7 +14,6 @@ public class P2PFile {
     private TreeMap<Integer, byte[]> chunks;
 
     private int numberOfChunks;
-    private int counter = 0;
 
     public P2PFile(String filename, int numberOfChunks) {
         this.filename = filename;
@@ -40,62 +39,6 @@ public class P2PFile {
     public void setChunk(int chunkNumber, byte[] data) {
         // Do a check if the chunk exists first
         chunks.put(chunkNumber, data);
-    }
-
-    public void flush() {
-        //If equal to null, return
-        if (chunks.get(counter) == null) {
-            return;
-        }
-
-        for (int i = counter; i < numberOfChunks; i++) {
-            if (chunks.get(counter) != null) {
-                copyToFile(i);
-                counter++;
-            } else {
-                break;
-            }
-        }
-    }
-
-    public List<Integer> getChunksThatAreNotDownloaded() {
-        List<Integer> list = new ArrayList<>();
-        for(int i=1; i<=numberOfChunks; i++){
-            if(!chunks.containsKey(i)){
-                list.add(i);
-            }
-        }
-        return list;
-    }
-
-    private void copyToFile(int index) {
-
-        byte[] dataToWrite = chunks.get(index);
-        int numberOfBytesToRead = 0;
-
-        // First, find out how much to write to file
-        if (dataToWrite[CHUNK_SIZE-1] != '\u0000') {
-            numberOfBytesToRead = CHUNK_SIZE;
-        }else{
-            for(int i=0; i<CHUNK_SIZE; i++){
-                if (dataToWrite[i] == '\u0000'){
-                    numberOfBytesToRead = i;
-                    break;
-                }
-            }
-        }
-
-        System.out.println("Bytes Read Size: " + numberOfBytesToRead);
-
-        // Write the data into the file
-        try {
-            bos.write(dataToWrite, 0, numberOfBytesToRead);
-            bos.flush();
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println(e);
-            System.exit(1);
-        }
     }
 
     public boolean writeToFile() {
