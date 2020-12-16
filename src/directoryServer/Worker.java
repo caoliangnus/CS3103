@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.*;
+import java.util.concurrent.Semaphore;
 
 public class Worker implements Runnable {
 
@@ -38,6 +39,8 @@ public class Worker implements Runnable {
 
     private Socket connectionSocket;
     private PrintWriter toClient;
+    private Semaphore fileNameListMutex = new Semaphore(1);
+    private Semaphore entryListMutex = new Semaphore(1);
     private List<FilePair> fileNameList = DirectoryServerMain.fileNameList;
     private Hashtable<String, ArrayList<Entry>> entryList = DirectoryServerMain.entryList;
 
@@ -114,7 +117,14 @@ public class Worker implements Runnable {
             return;
         }
 
-        List<Entry> listOfEntries = entryList.get(filename);
+        try {
+            entryListMutex.acquire();
+        } catch (InterruptedException e) {
+            entryListMutex.release();
+            e.printStackTrace();
+        }
+        List<Entry> listOfEntries = new ArrayList(entryList.get(filename));
+        entryListMutex.release();
         if (listOfEntries == null) {
             toClient.write(FILE_NOT_PRESENT_MESSAGE);
             toClient.flush();
@@ -181,6 +191,12 @@ public class Worker implements Runnable {
     }
 
     private synchronized void initializeClientExit(String IPAddress) {
+        try {
+            entryListMutex.acquire();
+        } catch (InterruptedException e) {
+            entryListMutex.release();
+            e.printStackTrace();
+        }
         entryList.forEach((filename, list) -> {
             Iterator<Entry> iterator = list.iterator();
             while(iterator.hasNext()){
@@ -192,18 +208,32 @@ public class Worker implements Runnable {
                     // We can have a flag to prevent all the extra looping
                     FilePair temp = new FilePair(filename, 0);
                     if(list.size() == 0){
+                        try {
+                            fileNameListMutex.acquire();
+                        } catch (InterruptedException e) {
+                            fileNameListMutex.release();
+                            e.printStackTrace();
+                        }
                         fileNameList.remove(temp);
+                        fileNameListMutex.release();
                     }
                 }
             }
         });
 
+        entryListMutex.release();
         toClient.write(EXIT_SUCCESSFUL_MESSAGE);
         toClient.flush();
     }
 
     private synchronized void searchForFile(String filename) {
         FilePair temp = new FilePair(filename, 0);
+        try {
+            fileNameListMutex.acquire();
+        } catch (InterruptedException e) {
+            fileNameListMutex.release();
+            e.printStackTrace();
+        }
         if (fileNameList.contains(temp)) {
             toClient.write(FILE_FOUND_MESSAGE);
             toClient.flush();
@@ -211,9 +241,17 @@ public class Worker implements Runnable {
             toClient.write(FILE_NOT_PRESENT_MESSAGE);
             toClient.flush();
         }
+        fileNameListMutex.release();
     }
 
     private synchronized void sendListOfAvailableFiles() {
+
+        try {
+            fileNameListMutex.acquire();
+        } catch (InterruptedException e) {
+            fileNameListMutex.release();
+            e.printStackTrace();
+        }
 
         if (fileNameList.isEmpty()) {
             toClient.write(FILE_LIST_EMPTY_MESSAGE);
@@ -230,6 +268,8 @@ public class Worker implements Runnable {
             toClient.write(result);
             toClient.flush();
         }
+
+        fileNameListMutex.release();
     }
 
     private synchronized void updateDirectory (String ip, String fileName, String chunkNum){
@@ -259,10 +299,18 @@ public class Worker implements Runnable {
 
         FilePair temp = new FilePair(fileName, Integer.parseInt(chunkNum));
         //Check if file already exists, if not update the fileNameList
+        try {
+            fileNameListMutex.acquire();
+        } catch (InterruptedException e) {
+            fileNameListMutex.release();
+            e.printStackTrace();
+        }
+
         if(!fileNameList.contains(temp)){
             fileNameList.add(temp);
             fileExisted = false;
         }
+        fileNameListMutex.release();
         //Update entry table (Subject to discussion, for now i just assume the client will advertise when he get the
         //whole file)
         if(!fileExisted){
@@ -270,9 +318,24 @@ public class Worker implements Runnable {
             for(int i =0;i<Integer.parseInt(chunkNum);i++){
                 entries.add(new Entry(i+1,ip));
             }
+            try {
+                entryListMutex.acquire();
+            } catch (InterruptedException e) {
+                entryListMutex.release();
+                e.printStackTrace();
+            }
             entryList.put(fileName, entries);
+            entryListMutex.release();
         }else {
             //Check if this file was advertised by this host earlier, if yes then don't add duplicate entries
+
+            try {
+                entryListMutex.acquire();
+            } catch (InterruptedException e) {
+                entryListMutex.release();
+                e.printStackTrace();
+            }
+
             if(entryList.get(fileName).get(0).getAddress().equals(ip)){
                 System.out.println(fileName + " has been advertised earlier. ");
             }else {
@@ -281,6 +344,8 @@ public class Worker implements Runnable {
 
                 }
             }
+
+            entryListMutex.release();
         }
         toClient.write(UPDATE_SUCCESSFUL_MESSAGE);
         toClient.flush();
@@ -290,6 +355,14 @@ public class Worker implements Runnable {
     public void returnTotalChunkNumber(String filename) {
 
         FilePair temp = new FilePair(filename, 0);
+
+        try {
+            fileNameListMutex.acquire();
+        } catch (InterruptedException e) {
+            fileNameListMutex.release();
+            e.printStackTrace();
+        }
+
         if (!fileNameList.contains(temp)) {
             toClient.write(FILE_NOT_PRESENT_MESSAGE);
             toClient.flush();
@@ -307,6 +380,8 @@ public class Worker implements Runnable {
                 return;
             }
         }
+
+        fileNameListMutex.release();
 
     }
 
